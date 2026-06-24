@@ -6,6 +6,7 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { MeshBackground } from "@/components/MeshBackground";
+import { CreatorShowcase } from "@/components/CreatorShowcase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -100,6 +101,8 @@ function AuthPage() {
           </div>
         </div>
       </div>
+
+      <CreatorShowcase />
     </div>
   );
 }
