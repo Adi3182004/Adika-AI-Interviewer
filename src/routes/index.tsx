@@ -276,6 +276,8 @@ function Landing() {
         </div>
       </section>
 
+      {/* Creator showcase — near footer */}
+      <CreatorShowcase />
 
       {/* Footer */}
       <footer className="relative z-10 border-t border-border">
