@@ -63,7 +63,7 @@ function RecruiterHome() {
           ].map(([k, v]) => (
             <div key={k} className="glass rounded-2xl p-6">
               <p className="text-xs uppercase tracking-wider text-muted-foreground">{k}</p>
-              <p className="mt-2 font-display text-4xl">{v}</p>
+              <p className="mt-2 font-display text-4xl text-gold">{v}</p>
             </div>
           ))}
         </div>
