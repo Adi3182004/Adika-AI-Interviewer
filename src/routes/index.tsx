@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Sparkles, Brain, Target, LineChart, Workflow, Quote, Shield, Building2, UserRound } from "lucide-react";
 import { MeshBackground } from "@/components/MeshBackground";
 import { Button } from "@/components/ui/button";
+import { GetStartedDialog } from "@/components/GetStartedDialog";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -55,28 +56,15 @@ function Landing() {
               so candidates grow faster and recruiters decide with clarity.
             </p>
 
-            <div className="mt-10 grid gap-3 sm:grid-cols-2 sm:max-w-xl">
-              <Link to="/auth" search={{ role: "candidate", mode: "register" }}>
-                <Button size="lg" className="w-full justify-between rounded-full">
-                  Candidate · Get started <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
-              <Link to="/auth" search={{ role: "candidate", mode: "login" }}>
-                <Button size="lg" variant="outline" className="w-full justify-between rounded-full">
-                  Candidate · Sign in <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
-              <Link to="/auth" search={{ role: "recruiter", mode: "register" }}>
-                <Button size="lg" className="w-full justify-between rounded-full bg-foreground text-background hover:bg-foreground/90">
-                  Recruiter · Get started <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
-              <Link to="/auth" search={{ role: "recruiter", mode: "login" }}>
-                <Button size="lg" variant="outline" className="w-full justify-between rounded-full">
-                  Recruiter · Sign in <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
-              <Link to="/recruiter/demo" className="sm:col-span-2">
+            <div className="mt-10 flex flex-col gap-3 sm:max-w-md">
+              <GetStartedDialog
+                trigger={
+                  <Button size="lg" className="w-full justify-between rounded-full">
+                    Get started <ArrowRight className="h-4 w-4" />
+                  </Button>
+                }
+              />
+              <Link to="/recruiter/demo">
                 <Button size="lg" variant="ghost" className="w-full justify-between rounded-full border border-dashed border-border">
                   Try the Recruiter Pro Demo — no signup <ArrowRight className="h-4 w-4" />
                 </Button>
