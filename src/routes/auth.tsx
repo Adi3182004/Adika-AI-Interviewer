@@ -125,8 +125,8 @@ function LoginForm({ role }: { role: "candidate" | "recruiter" }) {
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      <Field label="Work email" id="email"><Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
-      <Field label="Password" id="password"><Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} /></Field>
+      <Field label="Work email" id="email"><Input id="email" type="email" placeholder="example@gmail.com" required value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
+      <Field label="Enter password" id="password"><Input id="password" type="password" placeholder="••••••••" required value={password} onChange={(e) => setPassword(e.target.value)} /></Field>
       <Button type="submit" className="w-full rounded-full" disabled={loading}>
         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Sign in
       </Button>
