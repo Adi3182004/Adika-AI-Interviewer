@@ -190,17 +190,92 @@ function Landing() {
         </div>
       </section>
 
-      {/* About */}
-      <section className="relative z-10 mx-auto max-w-7xl px-6 py-24">
-        <div className="glass rounded-3xl p-10 md:p-14">
-          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">About the creator</p>
-          <h2 className="mt-3 font-display text-3xl md:text-4xl">Built by a hiring practitioner, for hiring teams.</h2>
-          <p className="mt-4 max-w-3xl text-muted-foreground">
-            Adika AI was designed to close the gap between candidate growth and recruiter decision-making.
-            Every workflow shares the same intelligence layer, so nothing is duplicated, lost, or out of sync.
-          </p>
+      {/* Hero — bottom of landing */}
+      <section className="relative z-10 mx-auto max-w-7xl px-6 pt-8 pb-24">
+        <div className="grid items-center gap-12 lg:grid-cols-[1.1fr_0.9fr]">
+          <div>
+            <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs text-muted-foreground">
+              <Sparkles className="h-3.5 w-3.5" /> AI Hiring Intelligence · v1
+            </span>
+            <h1 className="mt-6 font-display text-5xl leading-[1.02] text-balance md:text-7xl">
+              The hiring layer that thinks <em className="text-primary">with</em> you.
+            </h1>
+            <p className="mt-6 max-w-xl text-base text-muted-foreground md:text-lg">
+              Adika AI unifies resumes, interviews, learning and matching into one intelligence layer —
+              so candidates grow faster and recruiters decide with clarity.
+            </p>
+
+            <div className="mt-10 flex flex-col gap-3 sm:max-w-md">
+              <GetStartedDialog
+                trigger={
+                  <Button size="lg" className="w-full justify-between rounded-full">
+                    Get started <ArrowRight className="h-4 w-4" />
+                  </Button>
+                }
+              />
+              <Link to="/recruiter/demo">
+                <Button size="lg" variant="ghost" className="w-full justify-between rounded-full border border-dashed border-border">
+                  Try the Recruiter Pro Demo — no signup <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
+          </div>
+
+          <div className="relative">
+            <div className="glass relative overflow-hidden rounded-3xl p-1 shadow-luxe">
+              <div className="rounded-[1.4rem] bg-gradient-to-br from-white/80 to-secondary/60 p-6">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>Live Interview · Backend Engineer</span>
+                  <span className="rounded-full bg-success/15 px-2 py-0.5 text-[10px] font-medium text-success">Adaptive</span>
+                </div>
+                <p className="mt-4 font-display text-2xl leading-snug">
+                  "Walk me through how you'd design a rate-limited webhook ingestor for 50K events / sec."
+                </p>
+                <div className="mt-6 grid grid-cols-3 gap-3">
+                  {[
+                    { k: "Technical", v: 88 },
+                    { k: "Communication", v: 76 },
+                    { k: "Problem-solving", v: 92 },
+                  ].map((m) => (
+                    <div key={m.k} className="rounded-xl bg-surface/80 p-3">
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{m.k}</p>
+                      <p className="mt-1 font-display text-2xl">{m.v}</p>
+                      <div className="mt-2 h-1.5 rounded-full bg-secondary">
+                        <div className="h-full rounded-full bg-primary" style={{ width: `${m.v}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-6 flex items-center justify-between rounded-2xl border border-border bg-surface/70 px-4 py-3 text-sm">
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-full bg-accent" />
+                    <div>
+                      <p className="font-medium">Role readiness</p>
+                      <p className="text-xs text-muted-foreground">Senior Backend · 7 / 10 sessions</p>
+                    </div>
+                  </div>
+                  <span className="font-display text-2xl">82%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-16 grid grid-cols-2 gap-4 md:grid-cols-4">
+          {[
+            ["120K+", "Candidate profiles"],
+            ["3.4M", "Interview turns scored"],
+            ["94%", "Match-to-hire correlation"],
+            ["38%", "Faster time to offer"],
+          ].map(([v, l]) => (
+            <div key={l} className="glass rounded-2xl p-6">
+              <p className="font-display text-4xl">{v}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{l}</p>
+            </div>
+          ))}
         </div>
       </section>
+
 
       {/* Footer */}
       <footer className="relative z-10 border-t border-border">
