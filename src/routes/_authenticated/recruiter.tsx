@@ -48,21 +48,12 @@ function RecruiterHome() {
         <div className="glass rounded-3xl p-10 shadow-luxe">
           <p className="text-xs uppercase tracking-[0.3em] text-gold">{company || "Your team"}</p>
           <h1 className="mt-3 font-display text-5xl"><span className="text-gold">Welcome,</span> {name || "Recruiter"}.</h1>
-        <Button variant="outline" size="sm" onClick={logout} className="rounded-full border-border bg-transparent">
-          <LogOut className="mr-2 h-4 w-4" /> Sign out
-        </Button>
-      </header>
-
-      <main className="relative z-10 mx-auto max-w-7xl px-6 pb-24">
-        <div className="glass rounded-3xl p-10 shadow-luxe">
-          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">{company || "Your team"}</p>
-          <h1 className="mt-3 font-display text-5xl">Welcome, {name || "Recruiter"}.</h1>
           <p className="mt-3 max-w-2xl text-muted-foreground">
             Your hiring decision platform is initialized. Pipeline, candidate intelligence, interview replays
             and team calibration tools are coming next.
           </p>
           <div className="mt-6 flex gap-3">
-            <Link to="/recruiter/demo"><Button className="rounded-full">Open live demo workspace</Button></Link>
+            <Link to="/recruiter/demo"><Button className="rounded-full bg-gold-soft text-gold border-gold hover:bg-gold-soft">Open live demo workspace</Button></Link>
           </div>
         </div>
 
