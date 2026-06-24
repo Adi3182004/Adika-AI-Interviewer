@@ -36,9 +36,18 @@ function RecruiterHome() {
       <MeshBackground variant="constellation" />
       <header className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-6 py-6">
         <Link to="/" className="flex items-center gap-2">
-          <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary text-primary-foreground font-display">A</span>
-          <span className="font-display text-xl">Recruiter Pro</span>
+          <span className="grid h-9 w-9 place-items-center rounded-xl bg-gold-soft font-display">A</span>
+          <span className="font-display text-xl text-gold">Recruiter Pro</span>
         </Link>
+        <Button variant="outline" size="sm" onClick={logout} className="rounded-full border-gold bg-transparent text-gold hover:bg-gold-soft">
+          <LogOut className="mr-2 h-4 w-4" /> Sign out
+        </Button>
+      </header>
+
+      <main className="relative z-10 mx-auto max-w-7xl px-6 pb-24">
+        <div className="glass rounded-3xl p-10 shadow-luxe">
+          <p className="text-xs uppercase tracking-[0.3em] text-gold">{company || "Your team"}</p>
+          <h1 className="mt-3 font-display text-5xl"><span className="text-gold">Welcome,</span> {name || "Recruiter"}.</h1>
         <Button variant="outline" size="sm" onClick={logout} className="rounded-full border-border bg-transparent">
           <LogOut className="mr-2 h-4 w-4" /> Sign out
         </Button>
