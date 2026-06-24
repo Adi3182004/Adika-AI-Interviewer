@@ -128,7 +128,7 @@ export const interviewTurn = createServerFn({ method: "POST" })
             feedback: z.string(),
           }),
         }),
-        prompt: `Evaluate this interview answer for a ${session.role_target} (${session.difficulty}) candidate.\nQUESTION: ${messages?.findLast(m => m.role === "assistant")?.content ?? ""}\nANSWER: ${data.userAnswer}`,
+        prompt: `Evaluate this interview answer for a ${session.role_target} (${session.difficulty}) candidate.\nQUESTION: ${[...(messages ?? [])].reverse().find((m: { role: string }) => m.role === "assistant")?.content ?? ""}\nANSWER: ${data.userAnswer}`,
       });
       userScore = ev.score;
       await supabase.from("interview_messages").insert({
