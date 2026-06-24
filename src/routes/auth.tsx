@@ -238,13 +238,13 @@ function RecruiterRegisterForm() {
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Your name" id="full_name"><Input id="full_name" required value={form.full_name} onChange={set("full_name")} /></Field>
-        <Field label="Company" id="company_name"><Input id="company_name" required value={form.company_name} onChange={set("company_name")} /></Field>
+        <Field label="Your name" id="full_name"><Input id="full_name" placeholder="Aditya Andhalkar" required value={form.full_name} onChange={set("full_name")} /></Field>
+        <Field label="Company" id="company_name"><Input id="company_name" placeholder="Acme Inc." required value={form.company_name} onChange={set("company_name")} /></Field>
       </div>
-      <Field label="Work email" id="email"><Input id="email" type="email" required value={form.email} onChange={set("email")} /></Field>
+      <Field label="Work email" id="email"><Input id="email" type="email" placeholder="you@company.com" required value={form.email} onChange={set("email")} /></Field>
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Password" id="password"><Input id="password" type="password" required value={form.password} onChange={set("password")} /></Field>
-        <Field label="Confirm" id="confirm"><Input id="confirm" type="password" required value={form.confirm} onChange={set("confirm")} /></Field>
+        <Field label="Create password" id="password"><Input id="password" type="password" placeholder="At least 8 characters" required value={form.password} onChange={set("password")} /></Field>
+        <Field label="Confirm password" id="confirm"><Input id="confirm" type="password" placeholder="Re-enter password" required value={form.confirm} onChange={set("confirm")} /></Field>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
