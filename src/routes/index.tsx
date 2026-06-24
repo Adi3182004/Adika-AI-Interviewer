@@ -42,8 +42,8 @@ function Landing() {
         </div>
       </header>
 
-      {/* Creator showcase — top of landing */}
-      <CreatorShowcase />
+
+
 
 
       {/* Features */}
