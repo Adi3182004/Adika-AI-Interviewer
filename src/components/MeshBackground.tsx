@@ -1,20 +1,14 @@
+import crystalBg from "@/assets/crystal_bg.png.asset.json";
+
 export function MeshBackground({ variant = "mint" }: { variant?: "mint" | "constellation" }) {
   if (variant === "constellation") {
     return (
       <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-constellation">
-        <svg className="absolute inset-0 h-full w-full opacity-50" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <radialGradient id="dot" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#c4b5fd" />
-              <stop offset="100%" stopColor="#c4b5fd" stopOpacity="0" />
-            </radialGradient>
-          </defs>
-          {Array.from({ length: 28 }).map((_, i) => {
-            const x = (i * 137.5) % 100;
-            const y = (i * 73.3) % 100;
-            return <circle key={i} cx={`${x}%`} cy={`${y}%`} r="2" fill="url(#dot)" />;
-          })}
-        </svg>
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-90"
+          style={{ backgroundImage: `url(${crystalBg.url})` }}
+        />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,transparent_0%,rgba(10,8,22,0.6)_70%,rgba(10,8,22,0.95)_100%)]" />
       </div>
     );
   }

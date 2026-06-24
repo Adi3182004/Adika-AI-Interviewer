@@ -199,10 +199,24 @@
 
 @utility bg-constellation {
   background-color: #0a0816;
-  background-image:
-    radial-gradient(60% 40% at 20% 10%, rgba(167,139,250,0.18) 0%, transparent 60%),
-    radial-gradient(50% 35% at 80% 0%, rgba(125,90,220,0.22) 0%, transparent 60%),
-    radial-gradient(70% 50% at 50% 110%, rgba(80,50,180,0.25) 0%, transparent 60%);
+}
+
+@utility text-gold {
+  color: #DFC189;
+  background: linear-gradient(135deg, #DFC189 0%, #C9A86A 50%, #A87E3F 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+@utility border-gold {
+  border-color: rgba(201,168,106,0.4);
+}
+
+@utility bg-gold-soft {
+  background-color: rgba(201,168,106,0.14);
+  color: #DFC189;
+  border: 1px solid rgba(201,168,106,0.3);
 }
 
 @utility glass {
