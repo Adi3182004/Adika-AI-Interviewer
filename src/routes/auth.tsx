@@ -125,8 +125,8 @@ function LoginForm({ role }: { role: "candidate" | "recruiter" }) {
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      <Field label="Work email" id="email"><Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
-      <Field label="Password" id="password"><Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} /></Field>
+      <Field label="Work email" id="email"><Input id="email" type="email" placeholder="example@gmail.com" required value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
+      <Field label="Enter password" id="password"><Input id="password" type="password" placeholder="••••••••" required value={password} onChange={(e) => setPassword(e.target.value)} /></Field>
       <Button type="submit" className="w-full rounded-full" disabled={loading}>
         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Sign in
       </Button>
@@ -169,14 +169,14 @@ function CandidateRegisterForm() {
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      <Field label="Full name" id="full_name"><Input id="full_name" required value={form.full_name} onChange={set("full_name")} /></Field>
+      <Field label="Full name" id="full_name"><Input id="full_name" placeholder="Aditya Andhalkar" required value={form.full_name} onChange={set("full_name")} /></Field>
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Email" id="email"><Input id="email" type="email" required value={form.email} onChange={set("email")} /></Field>
-        <Field label="Phone" id="phone"><Input id="phone" type="tel" value={form.phone} onChange={set("phone")} /></Field>
+        <Field label="Email" id="email"><Input id="email" type="email" placeholder="example@gmail.com" required value={form.email} onChange={set("email")} /></Field>
+        <Field label="Phone" id="phone"><Input id="phone" type="tel" placeholder="+91 98765 43210" value={form.phone} onChange={set("phone")} /></Field>
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Password" id="password"><Input id="password" type="password" required value={form.password} onChange={set("password")} /></Field>
-        <Field label="Confirm" id="confirm"><Input id="confirm" type="password" required value={form.confirm} onChange={set("confirm")} /></Field>
+        <Field label="Create password" id="password"><Input id="password" type="password" placeholder="At least 8 characters" required value={form.password} onChange={set("password")} /></Field>
+        <Field label="Confirm password" id="confirm"><Input id="confirm" type="password" placeholder="Re-enter password" required value={form.confirm} onChange={set("confirm")} /></Field>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <Field label="Education" id="education"><Input id="education" placeholder="B.Tech CSE" value={form.education} onChange={set("education")} /></Field>
@@ -238,13 +238,13 @@ function RecruiterRegisterForm() {
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Your name" id="full_name"><Input id="full_name" required value={form.full_name} onChange={set("full_name")} /></Field>
-        <Field label="Company" id="company_name"><Input id="company_name" required value={form.company_name} onChange={set("company_name")} /></Field>
+        <Field label="Your name" id="full_name"><Input id="full_name" placeholder="Aditya Andhalkar" required value={form.full_name} onChange={set("full_name")} /></Field>
+        <Field label="Company" id="company_name"><Input id="company_name" placeholder="Acme Inc." required value={form.company_name} onChange={set("company_name")} /></Field>
       </div>
-      <Field label="Work email" id="email"><Input id="email" type="email" required value={form.email} onChange={set("email")} /></Field>
+      <Field label="Work email" id="email"><Input id="email" type="email" placeholder="you@company.com" required value={form.email} onChange={set("email")} /></Field>
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Password" id="password"><Input id="password" type="password" required value={form.password} onChange={set("password")} /></Field>
-        <Field label="Confirm" id="confirm"><Input id="confirm" type="password" required value={form.confirm} onChange={set("confirm")} /></Field>
+        <Field label="Create password" id="password"><Input id="password" type="password" placeholder="At least 8 characters" required value={form.password} onChange={set("password")} /></Field>
+        <Field label="Confirm password" id="confirm"><Input id="confirm" type="password" placeholder="Re-enter password" required value={form.confirm} onChange={set("confirm")} /></Field>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
