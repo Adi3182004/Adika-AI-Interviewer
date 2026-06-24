@@ -14,6 +14,252 @@ export type Database = {
   }
   public: {
     Tables: {
+      applications: {
+        Row: {
+          candidate_id: string
+          cover_note: string | null
+          created_at: string
+          id: string
+          job_id: string
+          match_score: number | null
+          recruiter_notes: string | null
+          resume_id: string | null
+          skill_gaps: string[] | null
+          stage: Database["public"]["Enums"]["application_stage"]
+          updated_at: string
+        }
+        Insert: {
+          candidate_id: string
+          cover_note?: string | null
+          created_at?: string
+          id?: string
+          job_id: string
+          match_score?: number | null
+          recruiter_notes?: string | null
+          resume_id?: string | null
+          skill_gaps?: string[] | null
+          stage?: Database["public"]["Enums"]["application_stage"]
+          updated_at?: string
+        }
+        Update: {
+          candidate_id?: string
+          cover_note?: string | null
+          created_at?: string
+          id?: string
+          job_id?: string
+          match_score?: number | null
+          recruiter_notes?: string | null
+          resume_id?: string | null
+          skill_gaps?: string[] | null
+          stage?: Database["public"]["Enums"]["application_stage"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "applications_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "applications_resume_id_fkey"
+            columns: ["resume_id"]
+            isOneToOne: false
+            referencedRelation: "resumes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      interview_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          role: string
+          score: number | null
+          session_id: string
+          signals: Json | null
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          role: string
+          score?: number | null
+          session_id: string
+          signals?: Json | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          role?: string
+          score?: number | null
+          session_id?: string
+          signals?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interview_messages_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "interview_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      interview_sessions: {
+        Row: {
+          candidate_id: string
+          created_at: string
+          difficulty: string
+          gaps: string[] | null
+          id: string
+          job_id: string | null
+          overall_score: number | null
+          question_count: number
+          readiness_score: number | null
+          role_target: string
+          status: Database["public"]["Enums"]["interview_status"]
+          strengths: string[] | null
+          summary: string | null
+          updated_at: string
+        }
+        Insert: {
+          candidate_id: string
+          created_at?: string
+          difficulty?: string
+          gaps?: string[] | null
+          id?: string
+          job_id?: string | null
+          overall_score?: number | null
+          question_count?: number
+          readiness_score?: number | null
+          role_target: string
+          status?: Database["public"]["Enums"]["interview_status"]
+          strengths?: string[] | null
+          summary?: string | null
+          updated_at?: string
+        }
+        Update: {
+          candidate_id?: string
+          created_at?: string
+          difficulty?: string
+          gaps?: string[] | null
+          id?: string
+          job_id?: string | null
+          overall_score?: number | null
+          question_count?: number
+          readiness_score?: number | null
+          role_target?: string
+          status?: Database["public"]["Enums"]["interview_status"]
+          strengths?: string[] | null
+          summary?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interview_sessions_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      jobs: {
+        Row: {
+          company: string | null
+          created_at: string
+          description: string | null
+          employment_type: string | null
+          id: string
+          location: string | null
+          recruiter_id: string
+          salary_max: number | null
+          salary_min: number | null
+          seniority: string | null
+          skills: string[]
+          status: Database["public"]["Enums"]["job_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          company?: string | null
+          created_at?: string
+          description?: string | null
+          employment_type?: string | null
+          id?: string
+          location?: string | null
+          recruiter_id: string
+          salary_max?: number | null
+          salary_min?: number | null
+          seniority?: string | null
+          skills?: string[]
+          status?: Database["public"]["Enums"]["job_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          company?: string | null
+          created_at?: string
+          description?: string | null
+          employment_type?: string | null
+          id?: string
+          location?: string | null
+          recruiter_id?: string
+          salary_max?: number | null
+          salary_min?: number | null
+          seniority?: string | null
+          skills?: string[]
+          status?: Database["public"]["Enums"]["job_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      learning_items: {
+        Row: {
+          candidate_id: string
+          created_at: string
+          id: string
+          resource_url: string | null
+          skill: string
+          source_session_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          candidate_id: string
+          created_at?: string
+          id?: string
+          resource_url?: string | null
+          skill: string
+          source_session_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          candidate_id?: string
+          created_at?: string
+          id?: string
+          resource_url?: string | null
+          skill?: string
+          source_session_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learning_items_source_session_id_fkey"
+            columns: ["source_session_id"]
+            isOneToOne: false
+            referencedRelation: "interview_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -65,6 +311,72 @@ export type Database = {
         }
         Relationships: []
       }
+      resumes: {
+        Row: {
+          ats_feedback: Json | null
+          ats_score: number | null
+          content: Json
+          created_at: string
+          file_url: string | null
+          id: string
+          is_primary: boolean
+          parsed_skills: string[]
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ats_feedback?: Json | null
+          ats_score?: number | null
+          content?: Json
+          created_at?: string
+          file_url?: string | null
+          id?: string
+          is_primary?: boolean
+          parsed_skills?: string[]
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ats_feedback?: Json | null
+          ats_score?: number | null
+          content?: Json
+          created_at?: string
+          file_url?: string | null
+          id?: string
+          is_primary?: boolean
+          parsed_skills?: string[]
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      saved_candidates: {
+        Row: {
+          candidate_id: string
+          created_at: string
+          id: string
+          recruiter_id: string
+          tag: string | null
+        }
+        Insert: {
+          candidate_id: string
+          created_at?: string
+          id?: string
+          recruiter_id: string
+          tag?: string | null
+        }
+        Update: {
+          candidate_id?: string
+          created_at?: string
+          id?: string
+          recruiter_id?: string
+          tag?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -101,6 +413,15 @@ export type Database = {
     }
     Enums: {
       app_role: "candidate" | "recruiter" | "admin"
+      application_stage:
+        | "new"
+        | "screen"
+        | "interview"
+        | "offer"
+        | "hired"
+        | "rejected"
+      interview_status: "in_progress" | "completed" | "abandoned"
+      job_status: "draft" | "published" | "closed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -229,6 +550,16 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["candidate", "recruiter", "admin"],
+      application_stage: [
+        "new",
+        "screen",
+        "interview",
+        "offer",
+        "hired",
+        "rejected",
+      ],
+      interview_status: ["in_progress", "completed", "abandoned"],
+      job_status: ["draft", "published", "closed"],
     },
   },
 } as const
