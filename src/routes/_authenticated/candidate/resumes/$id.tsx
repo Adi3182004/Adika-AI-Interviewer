@@ -57,7 +57,7 @@ function ResumeEditor() {
   async function save() {
     setSaving(true);
     const { error } = await supabase.from("resumes")
-      .update({ title, content: content as unknown as Record<string, unknown> })
+      .update({ title, content: content as any })
       .eq("id", id);
     setSaving(false);
     if (error) return toast.error(error.message);
