@@ -9,14 +9,14 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-const nav = [
+const nav: Array<{ to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean }> = [
   { to: "/candidate", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/candidate/resumes", label: "Resume Library", icon: FileText },
   { to: "/candidate/jobs", label: "Job Matching", icon: Briefcase },
   { to: "/candidate/interviews", label: "AI Interviewer", icon: Bot },
   { to: "/candidate/learning", label: "Learning", icon: GraduationCap },
   { to: "/candidate/profile", label: "Profile", icon: UserCircle2 },
-] as const;
+];
 
 export function CandidateShell({ children, title, eyebrow }: { children: ReactNode; title?: string; eyebrow?: string }) {
   const navigate = useNavigate();
