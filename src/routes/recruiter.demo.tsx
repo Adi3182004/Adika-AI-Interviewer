@@ -37,8 +37,8 @@ function RecruiterDemo() {
 
       <main className="relative z-10 mx-auto max-w-7xl px-6 pb-24">
         <div className="glass rounded-3xl p-10 shadow-luxe">
-          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Pipeline · Senior AI Engineer</p>
-          <h1 className="mt-3 font-display text-5xl">12 calibrated candidates</h1>
+          <p className="text-xs uppercase tracking-[0.3em] text-gold">Pipeline · Senior AI Engineer</p>
+          <h1 className="mt-3 font-display text-5xl"><span className="text-gold">12</span> calibrated candidates</h1>
           <p className="mt-2 text-muted-foreground">Match scores derived from skills, projects, ATS analysis, and adaptive interview outcomes.</p>
 
           <div className="mt-6 flex flex-wrap items-center gap-3">
