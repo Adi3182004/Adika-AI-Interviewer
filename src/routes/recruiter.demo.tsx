@@ -59,24 +59,24 @@ function RecruiterDemo() {
                   <p className="text-xs text-muted-foreground">{c.role} · {c.location}</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-display text-3xl">{c.match}</p>
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">match</p>
+                  <p className="font-display text-3xl text-gold">{c.match}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-gold/70">match</p>
                 </div>
               </div>
               <div className="mt-4 flex flex-wrap gap-1.5">
                 {c.skills.map((s) => (
-                  <span key={s} className="rounded-full bg-secondary px-2 py-0.5 text-[11px] text-secondary-foreground">{s}</span>
+                  <span key={s} className="rounded-full border border-border bg-card/40 px-2 py-0.5 text-[11px] text-muted-foreground">{s}</span>
                 ))}
               </div>
               <div className="mt-4">
-                <div className="flex justify-between text-xs"><span>Readiness</span><span className="text-muted-foreground">{c.readiness}%</span></div>
-                <div className="mt-1.5 h-1.5 rounded-full bg-secondary">
-                  <div className="h-full rounded-full bg-primary" style={{ width: `${c.readiness}%` }} />
+                <div className="flex justify-between text-xs"><span>Readiness</span><span className="text-gold/80">{c.readiness}%</span></div>
+                <div className="mt-1.5 h-1.5 rounded-full bg-card/60">
+                  <div className="h-full rounded-full bg-gradient-to-r from-[#A87E3F] via-[#C9A86A] to-[#DFC189]" style={{ width: `${c.readiness}%` }} />
                 </div>
               </div>
               <div className="mt-5 flex items-center justify-between">
-                <Button size="sm" variant="ghost" className="text-muted-foreground"><Star className="mr-1.5 h-4 w-4" /> Shortlist</Button>
-                <Button size="sm" className="rounded-full">View profile</Button>
+                <Button size="sm" variant="ghost" className="text-muted-foreground hover:text-gold"><Star className="mr-1.5 h-4 w-4" /> Shortlist</Button>
+                <Button size="sm" className="rounded-full bg-gold-soft text-gold border-gold hover:bg-gold-soft">View profile</Button>
               </div>
             </div>
           ))}
