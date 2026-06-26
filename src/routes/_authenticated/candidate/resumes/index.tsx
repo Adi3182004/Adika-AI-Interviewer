@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
+import { UploadResumeDialog } from "@/components/UploadResumeDialog";
 
 export const Route = createFileRoute("/_authenticated/candidate/resumes/")({
   head: () => ({ meta: [{ title: "Resume Library — Adika AI" }] }),
@@ -59,6 +60,7 @@ function ResumesList() {
             <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Senior Backend Engineer" className="mt-1" />
           </div>
           <Button onClick={create} className="rounded-full"><Plus className="mr-2 h-4 w-4" /> Create resume</Button>
+          <UploadResumeDialog />
         </div>
       </div>
 
