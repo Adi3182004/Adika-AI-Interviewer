@@ -293,6 +293,55 @@ export const uploadAndParseResume = createServerFn({ method: "POST" })
     }).select().single();
     if (insErr || !inserted) throw new Error(insErr?.message ?? "Insert failed");
 
+    // Auto-run ATS analysis so the candidate immediately sees a score
+    try {
+      const atsRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
+        body: JSON.stringify({
+          model: MODEL,
+          messages: [{
+            role: "user",
+            content: `You are an ATS auditor. Score this resume (0-100), extract skills (lowercase, deduped), and give per-section feedback for Summary, Experience, Education, Skills, Projects. Return JSON only.\n\nRESUME:\n${JSON.stringify(parsed)}`,
+          }],
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "ats", strict: true,
+              schema: {
+                type: "object", additionalProperties: false,
+                required: ["ats_score", "parsed_skills", "feedback"],
+                properties: {
+                  ats_score: { type: "number" },
+                  parsed_skills: { type: "array", items: { type: "string" } },
+                  feedback: {
+                    type: "object", additionalProperties: false,
+                    required: ["summary", "sections"],
+                    properties: {
+                      summary: { type: "string" },
+                      sections: { type: "array", items: { type: "object", additionalProperties: false, required: ["name","score","tip"], properties: { name: { type: "string" }, score: { type: "number" }, tip: { type: "string" } } } },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        }),
+      });
+      if (atsRes.ok) {
+        const aj = await atsRes.json();
+        const atsRaw = aj.choices?.[0]?.message?.content ?? "{}";
+        const ats = JSON.parse(atsRaw);
+        await supabase.from("resumes").update({
+          ats_score: Math.round(Number(ats.ats_score) || 0),
+          parsed_skills: Array.isArray(ats.parsed_skills) ? ats.parsed_skills : parsed.skills.map(s => s.toLowerCase()),
+          ats_feedback: ats.feedback,
+        }).eq("id", inserted.id);
+      }
+    } catch (e) {
+      console.error("ATS auto-analysis failed", e);
+    }
+
     return { resumeId: inserted.id };
   });
 
