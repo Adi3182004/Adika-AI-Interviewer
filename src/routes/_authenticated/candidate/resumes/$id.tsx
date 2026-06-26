@@ -223,6 +223,95 @@ function ResumeEditor() {
           )}
         </aside>
       </div>
+
+      {/* Role-targeted analysis */}
+      <div className="glass mt-8 rounded-2xl p-6">
+        <div className="flex items-center gap-2">
+          <Target className="h-5 w-5 text-primary" />
+          <h2 className="font-display text-2xl">Role-Targeted Analysis</h2>
+        </div>
+        <p className="mt-1 text-sm text-muted-foreground">Tell us the role you're targeting — we'll list concrete plus points and drawbacks for THIS role, not generic feedback.</p>
+
+        <div className="mt-5 grid gap-3 md:grid-cols-2">
+          <div>
+            <label className="text-xs uppercase tracking-wider text-muted-foreground">Target role *</label>
+            <Input className="mt-1" placeholder="e.g. Frontend Engineer Intern" value={roleForm.role} onChange={(e) => setRoleForm({ ...roleForm, role: e.target.value })} />
+          </div>
+          <div>
+            <label className="text-xs uppercase tracking-wider text-muted-foreground">Target company (optional)</label>
+            <Input className="mt-1" placeholder="e.g. Google, Stripe" value={roleForm.company} onChange={(e) => setRoleForm({ ...roleForm, company: e.target.value })} />
+          </div>
+          <div>
+            <label className="text-xs uppercase tracking-wider text-muted-foreground">Experience level *</label>
+            <Input className="mt-1" placeholder="Student / Intern / 0-1 yr / 2-4 yr" value={roleForm.experienceLevel} onChange={(e) => setRoleForm({ ...roleForm, experienceLevel: e.target.value })} />
+          </div>
+          <div className="md:col-span-2">
+            <label className="text-xs uppercase tracking-wider text-muted-foreground">Job description (optional)</label>
+            <Textarea rows={4} className="mt-1" placeholder="Paste the JD to get the most precise analysis" value={roleForm.jobDescription} onChange={(e) => setRoleForm({ ...roleForm, jobDescription: e.target.value })} />
+          </div>
+        </div>
+        <Button onClick={runRoleAnalysis} disabled={targeting} className="mt-4 rounded-full">
+          {targeting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />} Analyze for this role
+        </Button>
+
+        {resume?.targeted_feedback ? (
+          <div className="mt-8 grid gap-5 lg:grid-cols-3">
+            <div className="glass rounded-2xl border border-primary/30 p-5">
+              <p className="text-xs uppercase tracking-wider text-muted-foreground">Role fit</p>
+              <p className="mt-1 font-display text-5xl text-primary">{(resume.targeted_feedback as any).role_fit_score}</p>
+              <p className="mt-2 text-sm">{(resume.targeted_feedback as any).verdict}</p>
+              <p className="mt-3 rounded-lg bg-secondary/50 p-3 text-xs"><span className="font-medium">Tailored summary:</span> {(resume.targeted_feedback as any).tailored_summary}</p>
+            </div>
+            <div className="glass rounded-2xl p-5">
+              <p className="mb-3 flex items-center gap-2 text-sm font-medium"><ThumbsUp className="h-4 w-4 text-success" /> Plus points</p>
+              <ul className="space-y-3">
+                {((resume.targeted_feedback as any).plus_points ?? []).map((p: any, i: number) => (
+                  <li key={i} className="rounded-lg border border-success/30 bg-success/5 p-3 text-sm">
+                    <p className="font-medium">{p.title}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{p.detail}</p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="glass rounded-2xl p-5">
+              <p className="mb-3 flex items-center gap-2 text-sm font-medium"><ThumbsDown className="h-4 w-4 text-destructive" /> Drawbacks</p>
+              <ul className="space-y-3">
+                {((resume.targeted_feedback as any).drawbacks ?? []).map((d: any, i: number) => (
+                  <li key={i} className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm">
+                    <div className="flex items-center justify-between">
+                      <p className="font-medium">{d.title}</p>
+                      <Badge variant="outline" className="text-[10px] capitalize">{d.severity}</Badge>
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">{d.detail}</p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="glass rounded-2xl p-5 lg:col-span-3">
+              <p className="mb-3 flex items-center gap-2 text-sm font-medium"><ListChecks className="h-4 w-4 text-primary" /> 30-day action plan</p>
+              <ol className="grid gap-2 md:grid-cols-2">
+                {((resume.targeted_feedback as any).action_items ?? []).map((a: string, i: number) => (
+                  <li key={i} className="flex gap-2 rounded-lg border border-border/60 p-3 text-sm">
+                    <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-primary/15 text-xs font-medium text-primary">{i + 1}</span>
+                    <span>{a}</span>
+                  </li>
+                ))}
+              </ol>
+              {((resume.targeted_feedback as any).missing_skills ?? []).length > 0 && (
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                  <span className="text-xs uppercase tracking-wider text-muted-foreground">Skills to add:</span>
+                  {((resume.targeted_feedback as any).missing_skills ?? []).map((s: string) => (
+                    <Badge key={s} variant="secondary" className="rounded-full">{s}</Badge>
+                  ))}
+                  <span className="text-xs text-muted-foreground">→ added to your Learning Center</span>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <p className="mt-6 text-sm text-muted-foreground">No role analysis yet. Fill the form above to generate one.</p>
+        )}
+      </div>
     </CandidateShell>
   );
 }
