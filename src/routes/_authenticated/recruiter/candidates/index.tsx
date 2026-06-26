@@ -43,7 +43,7 @@ function Candidates() {
       if (!u.user) return [];
       const { data } = await supabase
         .from("applications")
-        .select("*, profiles!applications_candidate_id_fkey(full_name,email,experience_level,education), jobs!inner(title,recruiter_id), resumes(parsed_skills,ats_score,content)")
+        .select("*, profiles!applications_candidate_id_fkey(full_name,email,experience_level,education), jobs!inner(title,recruiter_id,skills,description), resumes(parsed_skills,ats_score,content)")
         .eq("jobs.recruiter_id", u.user.id)
         .order("match_score", { ascending: false });
       return data ?? [];
@@ -208,40 +208,96 @@ function Candidates() {
       <Sheet open={!!openId} onOpenChange={(o) => !o && setOpenId(null)}>
         <SheetContent side="right" className="recruiter w-full max-w-xl overflow-y-auto">
           <SheetHeader><SheetTitle className="text-gold">{(open as any)?.profiles?.full_name ?? "Candidate"}</SheetTitle></SheetHeader>
-          {open && (
-            <div className="mt-4 space-y-4">
-              <div className="rounded-xl bg-card/40 p-4 text-sm">
-                <p className="text-xs uppercase text-muted-foreground">Applied to</p>
-                <p className="mt-1 font-medium">{(open as any).jobs?.title}</p>
-                <div className="mt-3 grid grid-cols-3 gap-3 text-center">
-                  <div><p className="text-[10px] uppercase text-muted-foreground">Match</p><p className="font-display text-2xl text-gold">{open.match_score ?? "—"}</p></div>
-                  <div><p className="text-[10px] uppercase text-muted-foreground">ATS</p><p className="font-display text-2xl text-gold">{(open as any).resumes?.ats_score ?? "—"}</p></div>
-                  <div><p className="text-[10px] uppercase text-muted-foreground">Stage</p><p className="font-display text-base capitalize">{open.stage}</p></div>
+          {open && (() => {
+            const jobSkills: string[] = ((open as any).jobs?.skills ?? []) as string[];
+            const candSkills: string[] = ((open as any).resumes?.parsed_skills ?? []) as string[];
+            const candSet = new Set(candSkills.map(s => s.toLowerCase()));
+            const matched = jobSkills.filter(s => candSet.has(s.toLowerCase()));
+            const missing = jobSkills.filter(s => !candSet.has(s.toLowerCase()));
+            const coverage = jobSkills.length ? Math.round((matched.length / jobSkills.length) * 100) : null;
+            const ats = (open as any).resumes?.ats_score as number | null;
+            const ms = open.match_score ?? null;
+            return (
+              <div className="mt-4 space-y-4">
+                <div className="rounded-xl bg-card/40 p-4 text-sm">
+                  <p className="text-xs uppercase text-muted-foreground">Applied to</p>
+                  <p className="mt-1 font-medium">{(open as any).jobs?.title}</p>
+                  <div className="mt-3 grid grid-cols-3 gap-3 text-center">
+                    <div><p className="text-[10px] uppercase text-muted-foreground">Match</p><p className="font-display text-2xl text-gold">{ms ?? "—"}</p></div>
+                    <div><p className="text-[10px] uppercase text-muted-foreground">ATS</p><p className="font-display text-2xl text-gold">{ats ?? "—"}</p></div>
+                    <div><p className="text-[10px] uppercase text-muted-foreground">Stage</p><p className="font-display text-base capitalize">{open.stage}</p></div>
+                  </div>
                 </div>
-              </div>
-              <div>
-                <p className="text-xs uppercase text-muted-foreground">Skills</p>
-                <div className="mt-2 flex flex-wrap gap-1">
-                  {((open as any).resumes?.parsed_skills ?? []).map((s: string) => <Badge key={s} variant="outline" className="rounded-full text-[10px] border-gold/30 text-gold/80">{s}</Badge>)}
+
+                {/* Match score breakdown */}
+                <div className="rounded-xl border border-gold/20 bg-gold-soft/40 p-4 text-sm">
+                  <p className="text-[10px] uppercase tracking-wider text-gold mb-3">Match score breakdown</p>
+                  {coverage != null && (
+                    <BreakdownBar label="Skill coverage" value={coverage} hint={`${matched.length}/${jobSkills.length} required skills`} />
+                  )}
+                  {ats != null && <BreakdownBar label="Resume ATS" value={ats} />}
+                  {ms != null && <BreakdownBar label="Overall AI match" value={ms} />}
+                  <p className="mt-2 text-[11px] text-muted-foreground">
+                    Combines required-skill overlap, resume ATS, and the AI's holistic fit signal.
+                  </p>
                 </div>
-              </div>
-              {!!open.skill_gaps?.length && (
+
+                {!!matched.length && (
+                  <div>
+                    <p className="text-xs uppercase text-emerald-500/80 flex items-center gap-1">✓ Matched required skills</p>
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {matched.map(s => <Badge key={s} variant="outline" className="rounded-full text-[10px] border-emerald-500/30 text-emerald-500">{s}</Badge>)}
+                    </div>
+                  </div>
+                )}
+                {!!missing.length && (
+                  <div>
+                    <p className="text-xs uppercase text-amber-500/80">! Missing from JD</p>
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {missing.map(s => <Badge key={s} variant="outline" className="rounded-full text-[10px] border-amber-500/30 text-amber-500">{s}</Badge>)}
+                    </div>
+                  </div>
+                )}
+
                 <div>
-                  <p className="text-xs uppercase text-muted-foreground">Skill gaps</p>
-                  <div className="mt-2 flex flex-wrap gap-1">{open.skill_gaps.map(s => <Badge key={s} variant="secondary" className="rounded-full text-[10px]">{s}</Badge>)}</div>
+                  <p className="text-xs uppercase text-muted-foreground">All candidate skills</p>
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {candSkills.map((s: string) => <Badge key={s} variant="outline" className="rounded-full text-[10px] border-gold/30 text-gold/80">{s}</Badge>)}
+                  </div>
                 </div>
-              )}
-              <div>
-                <Button onClick={() => runSummary(open.id)} disabled={loadingSummary} className="rounded-full bg-gold-soft text-gold border border-gold hover:bg-gold/20">
-                  {loadingSummary ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                  AI recruiter brief
-                </Button>
-                {summary && <p className="mt-3 rounded-xl border border-gold/30 bg-card/40 p-4 text-sm">{summary}</p>}
+                {!!open.skill_gaps?.length && (
+                  <div>
+                    <p className="text-xs uppercase text-muted-foreground">AI-flagged skill gaps</p>
+                    <div className="mt-2 flex flex-wrap gap-1">{open.skill_gaps.map(s => <Badge key={s} variant="secondary" className="rounded-full text-[10px]">{s}</Badge>)}</div>
+                  </div>
+                )}
+                <div>
+                  <Button onClick={() => runSummary(open.id)} disabled={loadingSummary} className="rounded-full bg-gold-soft text-gold border border-gold hover:bg-gold/20">
+                    {loadingSummary ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                    AI recruiter brief
+                  </Button>
+                  {summary && <p className="mt-3 rounded-xl border border-gold/30 bg-card/40 p-4 text-sm whitespace-pre-wrap">{summary}</p>}
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
         </SheetContent>
       </Sheet>
     </RecruiterShell>
+  );
+}
+
+function BreakdownBar({ label, value, hint }: { label: string; value: number; hint?: string }) {
+  const tone = value >= 75 ? "bg-emerald-500" : value >= 50 ? "bg-gold" : "bg-amber-500";
+  return (
+    <div className="mb-2 last:mb-0">
+      <div className="flex items-baseline justify-between text-[11px]">
+        <span className="text-muted-foreground">{label}{hint && <span className="ml-2 text-muted-foreground/70">{hint}</span>}</span>
+        <span className="font-display text-gold">{value}</span>
+      </div>
+      <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-card/60">
+        <div className={`h-full ${tone}`} style={{ width: `${Math.max(0, Math.min(100, value))}%` }} />
+      </div>
+    </div>
   );
 }
