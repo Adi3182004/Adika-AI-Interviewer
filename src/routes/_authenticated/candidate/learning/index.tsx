@@ -3,11 +3,12 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
-import { GraduationCap, CheckCircle2, Circle, Loader, Map, Loader2, Trophy, Flag, BookOpen } from "lucide-react";
+import { GraduationCap, CheckCircle2, Circle, Loader, Map, Loader2, Trophy, Flag, BookOpen, Plus, Trash2 } from "lucide-react";
 import { CandidateShell } from "@/components/CandidateShell";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { generateLearningRoadmap } from "@/lib/ai.functions";
 
