@@ -435,17 +435,30 @@ export const generateLearningRoadmap = createServerFn({ method: "POST" })
       skill: z.string(),
       overview: z.string(),
       estimated_weeks: z.number(),
+      total_days: z.number().optional(),
+      hours_per_week: z.string().optional(),
+      difficulty: z.string().optional(),
       prerequisites: z.array(z.string()),
       phases: z.array(z.object({
         week_range: z.string(),
+        day_range: z.string().optional(),
+        duration_days: z.number().optional(),
+        time_commitment: z.string().optional(),
         title: z.string(),
         goals: z.array(z.string()),
         topics: z.array(z.string()),
+        daily_plan: z.array(z.object({
+          day: z.string(),
+          focus: z.string(),
+          time: z.string().optional(),
+        })).optional(),
         project: z.string(),
-        resources: z.array(z.object({ name: z.string(), type: z.string(), url: z.string().optional() })),
+        project_time: z.string().optional(),
+        resources: z.array(z.object({ name: z.string(), type: z.string(), url: z.string().optional(), time: z.string().optional() })),
       })),
       milestones: z.array(z.string()),
       final_capstone: z.string(),
+      capstone_time: z.string().optional(),
     });
 
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -455,7 +468,7 @@ export const generateLearningRoadmap = createServerFn({ method: "POST" })
         model: MODEL,
         messages: [{
           role: "user",
-          content: `Build a detailed week-by-week learning roadmap for a student to master "${item.skill}" from scratch to job-ready. Include 3-5 phases, hands-on projects per phase, concrete resources (real platforms: freeCodeCamp, MDN, LeetCode, official docs, Coursera, YouTube channels, etc.), milestones, and a final capstone. Resource "type" must be one of: course, docs, book, video, article, practice. Return ONLY a JSON object with this shape:\n{\n  "skill": string,\n  "overview": string,\n  "estimated_weeks": number,\n  "prerequisites": [string],\n  "phases": [{ "week_range": string, "title": string, "goals": [string], "topics": [string], "project": string, "resources": [{ "name": string, "type": string, "url": string }] }],\n  "milestones": [string],\n  "final_capstone": string\n}`,
+          content: `Build a STUDENT-FRIENDLY, time-explicit week-by-week learning roadmap to master "${item.skill}" from scratch to job-ready. Assume ~10-15 hours/week. Make timing crystal clear: total days, days per phase, a daily breakdown (e.g. "Day 1-2: ...", "Day 3: ..."), and time estimates on each project/resource (e.g. "~4 hours", "2 days"). 3-5 phases. Resource type must be one of: course, docs, book, video, article, practice. Return ONLY JSON:\n{\n  "skill": string,\n  "overview": string (2-3 sentences, beginner friendly),\n  "estimated_weeks": number,\n  "total_days": number,\n  "hours_per_week": string e.g. "10-12 hrs/week",\n  "difficulty": "Beginner"|"Intermediate"|"Advanced",\n  "prerequisites": [string],\n  "phases": [{\n    "week_range": string e.g. "Week 1-2",\n    "day_range": string e.g. "Day 1-14",\n    "duration_days": number,\n    "time_commitment": string e.g. "~20 hours total",\n    "title": string,\n    "goals": [string],\n    "topics": [string],\n    "daily_plan": [{ "day": string e.g. "Day 1-2", "focus": string, "time": string e.g. "3 hrs" }],\n    "project": string,\n    "project_time": string e.g. "~6 hours",\n    "resources": [{ "name": string, "type": string, "url": string, "time": string e.g. "2 hrs" }]\n  }],\n  "milestones": [string],\n  "final_capstone": string,\n  "capstone_time": string e.g. "1 week (~15 hours)"\n}`,
         }],
       }),
     });
