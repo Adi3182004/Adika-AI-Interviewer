@@ -1,11 +1,11 @@
 {
-  "version": 1,
   "asset_id": "6166305d-4d74-446f-bf9b-e3bae0a927f5",
-  "project_id": "b5747ae9-d528-4668-bda1-1449393388f4",
-  "url": "/__l5e/assets-v1/6166305d-4d74-446f-bf9b-e3bae0a927f5/crystal_bg.png",
-  "r2_key": "a/v1/b5747ae9-d528-4668-bda1-1449393388f4/6166305d-4d74-446f-bf9b-e3bae0a927f5/crystal_bg.png",
-  "original_filename": "crystal_bg.png",
-  "size": 249557,
   "content_type": "image/png",
-  "created_at": "2026-06-24T05:20:20Z"
+  "created_at": "2026-06-24T05:20:20Z",
+  "original_filename": "crystal_bg.png",
+  "project_id": "1d2dacc7-d563-4d0f-ba1e-7f03f75564d3",
+  "r2_key": "a/v1/1d2dacc7-d563-4d0f-ba1e-7f03f75564d3/6166305d-4d74-446f-bf9b-e3bae0a927f5/crystal_bg.png",
+  "size": 249557,
+  "url": "/__l5e/assets-v1/6166305d-4d74-446f-bf9b-e3bae0a927f5/crystal_bg.png",
+  "version": 1
 }
