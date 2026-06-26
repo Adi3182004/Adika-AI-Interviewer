@@ -43,7 +43,7 @@ function Candidates() {
       if (!u.user) return [];
       const { data } = await supabase
         .from("applications")
-        .select("*, profiles!applications_candidate_id_fkey(full_name,email,experience_level,education), jobs!inner(title,recruiter_id), resumes(parsed_skills,ats_score,content)")
+        .select("*, profiles!applications_candidate_id_fkey(full_name,email,experience_level,education), jobs!inner(title,recruiter_id,skills,description), resumes(parsed_skills,ats_score,content)")
         .eq("jobs.recruiter_id", u.user.id)
         .order("match_score", { ascending: false });
       return data ?? [];
