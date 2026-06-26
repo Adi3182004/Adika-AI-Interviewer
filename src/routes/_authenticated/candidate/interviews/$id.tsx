@@ -129,7 +129,7 @@ function InterviewSession() {
             <p className="text-xs uppercase tracking-wider text-muted-foreground">Status</p>
             <Badge className="mt-2 rounded-full capitalize">{session?.status?.replace("_"," ") ?? "—"}</Badge>
             <div className="mt-4 grid grid-cols-2 gap-3 text-center">
-              <div><p className="text-[10px] uppercase text-muted-foreground">Questions</p><p className="font-display text-2xl">{session?.question_count ?? 0}/6</p></div>
+              <div><p className="text-[10px] uppercase text-muted-foreground">Questions</p><p className="font-display text-2xl">{session?.question_count ?? 0}/10</p></div>
               <div><p className="text-[10px] uppercase text-muted-foreground">Overall</p><p className="font-display text-2xl">{session?.overall_score ?? "—"}</p></div>
             </div>
           </div>
