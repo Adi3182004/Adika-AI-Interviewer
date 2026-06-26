@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { summarizeCandidate } from "@/lib/ai.functions";
+import { useTeamRecruiterIds } from "@/hooks/use-team-recruiter-ids";
 
 export const Route = createFileRoute("/_authenticated/recruiter/candidates/")({
   head: () => ({ meta: [{ title: "Candidates — Recruiter" }] }),
