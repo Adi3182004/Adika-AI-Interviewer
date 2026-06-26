@@ -3,14 +3,14 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2, Save, Sparkles, Wand2 } from "lucide-react";
+import { ArrowLeft, Loader2, Save, Sparkles, Wand2, Target, ThumbsUp, ThumbsDown, ListChecks } from "lucide-react";
 import { CandidateShell } from "@/components/CandidateShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { analyzeResume, improveResumeSection } from "@/lib/ai.functions";
+import { analyzeResume, improveResumeSection, analyzeResumeForRole } from "@/lib/ai.functions";
 
 type Content = {
   summary: string;
