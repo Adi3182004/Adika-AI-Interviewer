@@ -208,6 +208,8 @@ function SettingsPage() {
         </div>
       )}
 
+      {tab === "invites" && <TeamInvitesPanel />}
+
       {tab === "preferences" && (
         <div className="glass mt-6 max-w-3xl rounded-2xl p-8 space-y-2">
           <div className="flex items-center gap-3 border-b border-gold/20 pb-4">
