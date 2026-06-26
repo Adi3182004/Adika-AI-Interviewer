@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Plus, Globe, Eye, EyeOff, Trash2 } from "lucide-react";
+import { useTeamRecruiterIds } from "@/hooks/use-team-recruiter-ids";
 import { RecruiterShell } from "@/components/RecruiterShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
