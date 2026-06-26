@@ -192,7 +192,10 @@ function Learning() {
 
               {openItem.roadmap.final_capstone && (
                 <div className="mt-4 rounded-2xl border border-primary/30 bg-primary/5 p-5">
-                  <p className="mb-2 flex items-center gap-2 text-sm font-medium"><Trophy className="h-4 w-4 text-primary" /> Final capstone</p>
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <p className="flex items-center gap-2 text-sm font-medium"><Trophy className="h-4 w-4 text-primary" /> Final capstone</p>
+                    {openItem.roadmap.capstone_time && <span className="text-xs text-muted-foreground">⏱ {openItem.roadmap.capstone_time}</span>}
+                  </div>
                   <p className="text-sm">{openItem.roadmap.final_capstone}</p>
                 </div>
               )}
