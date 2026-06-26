@@ -225,6 +225,7 @@ export type Database = {
           created_at: string
           id: string
           resource_url: string | null
+          roadmap: Json | null
           skill: string
           source_session_id: string | null
           status: string
@@ -235,6 +236,7 @@ export type Database = {
           created_at?: string
           id?: string
           resource_url?: string | null
+          roadmap?: Json | null
           skill: string
           source_session_id?: string | null
           status?: string
@@ -245,6 +247,7 @@ export type Database = {
           created_at?: string
           id?: string
           resource_url?: string | null
+          roadmap?: Json | null
           skill?: string
           source_session_id?: string | null
           status?: string
@@ -321,6 +324,8 @@ export type Database = {
           id: string
           is_primary: boolean
           parsed_skills: string[]
+          role_target: string | null
+          targeted_feedback: Json | null
           title: string
           updated_at: string
           user_id: string
@@ -334,6 +339,8 @@ export type Database = {
           id?: string
           is_primary?: boolean
           parsed_skills?: string[]
+          role_target?: string | null
+          targeted_feedback?: Json | null
           title?: string
           updated_at?: string
           user_id: string
@@ -347,6 +354,8 @@ export type Database = {
           id?: string
           is_primary?: boolean
           parsed_skills?: string[]
+          role_target?: string | null
+          targeted_feedback?: Json | null
           title?: string
           updated_at?: string
           user_id?: string
