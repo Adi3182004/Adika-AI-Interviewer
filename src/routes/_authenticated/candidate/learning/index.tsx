@@ -22,6 +22,37 @@ function Learning() {
   const buildRoadmap = useServerFn(generateLearningRoadmap);
   const [openItem, setOpenItem] = useState<any | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
+  const [newSkill, setNewSkill] = useState("");
+  const [newUrl, setNewUrl] = useState("");
+  const [adding, setAdding] = useState(false);
+
+  async function addCustom() {
+    if (!newSkill.trim()) return;
+    setAdding(true);
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) throw new Error("Not signed in");
+      const { error } = await supabase.from("learning_items").insert({
+        candidate_id: u.user.id,
+        skill: newSkill.trim(),
+        resource_url: newUrl.trim() || null,
+        status: "todo",
+      });
+      if (error) throw error;
+      toast.success("Task added");
+      setNewSkill(""); setNewUrl(""); setAddOpen(false);
+      qc.invalidateQueries({ queryKey: ["learning"] });
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed");
+    }
+    setAdding(false);
+  }
+
+  async function removeItem(id: string) {
+    await supabase.from("learning_items").delete().eq("id", id);
+    qc.invalidateQueries({ queryKey: ["learning"] });
+  }
 
   const { data: items } = useQuery({
     queryKey: ["learning"],
