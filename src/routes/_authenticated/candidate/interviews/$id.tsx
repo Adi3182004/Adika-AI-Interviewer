@@ -71,17 +71,46 @@ function InterviewSession() {
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <div className="glass flex h-[70vh] flex-col rounded-2xl">
           <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto p-6">
-            {(messages ?? []).map((m) => (
-              <div key={m.id} className={`flex gap-3 ${m.role === "user" ? "flex-row-reverse" : ""}`}>
-                <div className={`grid h-8 w-8 shrink-0 place-items-center rounded-full ${m.role === "user" ? "bg-secondary" : "bg-primary text-primary-foreground"}`}>
-                  {m.role === "user" ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
+            {(messages ?? []).map((m) => {
+              const sig = (m.signals ?? {}) as any;
+              return (
+                <div key={m.id} className={`flex gap-3 ${m.role === "user" ? "flex-row-reverse" : ""}`}>
+                  <div className={`grid h-8 w-8 shrink-0 place-items-center rounded-full ${m.role === "user" ? "bg-secondary" : "bg-primary text-primary-foreground"}`}>
+                    {m.role === "user" ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
+                  </div>
+                  <div className={`max-w-[80%] space-y-2 ${m.role === "user" ? "items-end" : ""}`}>
+                    <div className={`rounded-2xl px-4 py-3 text-sm ${m.role === "user" ? "bg-secondary" : "bg-card border border-border"}`}>
+                      <p className="whitespace-pre-wrap">{m.content}</p>
+                    </div>
+                    {m.role === "user" && m.score != null && (
+                      <div className="rounded-xl border border-border/60 bg-card/60 p-3 text-xs space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-[11px] uppercase tracking-wider text-muted-foreground">AI Analysis</span>
+                          <Badge className="rounded-full">Score {m.score}/100</Badge>
+                        </div>
+                        {sig.feedback && <p className="text-foreground/90">{sig.feedback}</p>}
+                        {sig.what_was_good?.length > 0 && (
+                          <div><span className="text-success font-medium">✓ Worked:</span> <span className="text-muted-foreground">{sig.what_was_good.join(" · ")}</span></div>
+                        )}
+                        {sig.what_to_improve?.length > 0 && (
+                          <div><span className="text-warning font-medium">↑ Improve:</span> <span className="text-muted-foreground">{sig.what_to_improve.join(" · ")}</span></div>
+                        )}
+                        {sig.ideal_answer_sketch && (
+                          <div className="pt-1 border-t border-border/40 text-muted-foreground"><span className="font-medium text-foreground/80">Model:</span> {sig.ideal_answer_sketch}</div>
+                        )}
+                        {(sig.clarity != null || sig.technical != null || sig.depth != null) && (
+                          <div className="flex gap-3 pt-1 text-[10px] text-muted-foreground">
+                            {sig.clarity != null && <span>Clarity {sig.clarity}</span>}
+                            {sig.technical != null && <span>Technical {sig.technical}</span>}
+                            {sig.depth != null && <span>Depth {sig.depth}</span>}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm ${m.role === "user" ? "bg-secondary" : "bg-card border border-border"}`}>
-                  <p className="whitespace-pre-wrap">{m.content}</p>
-                  {m.score != null && <p className="mt-2 text-[10px] uppercase text-muted-foreground">Score: {m.score}</p>}
-                </div>
-              </div>
-            ))}
+              );
+            })}
             {sending && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> AI is thinking…</div>}
           </div>
 
@@ -100,7 +129,7 @@ function InterviewSession() {
             <p className="text-xs uppercase tracking-wider text-muted-foreground">Status</p>
             <Badge className="mt-2 rounded-full capitalize">{session?.status?.replace("_"," ") ?? "—"}</Badge>
             <div className="mt-4 grid grid-cols-2 gap-3 text-center">
-              <div><p className="text-[10px] uppercase text-muted-foreground">Questions</p><p className="font-display text-2xl">{session?.question_count ?? 0}/6</p></div>
+              <div><p className="text-[10px] uppercase text-muted-foreground">Questions</p><p className="font-display text-2xl">{session?.question_count ?? 0}/10</p></div>
               <div><p className="text-[10px] uppercase text-muted-foreground">Overall</p><p className="font-display text-2xl">{session?.overall_score ?? "—"}</p></div>
             </div>
           </div>

@@ -117,6 +117,37 @@ export const matchJob = createServerFn({ method: "POST" })
   });
 
 // ------------- INTERVIEW: NEXT TURN -------------
+// 10 adaptive questions, company + role + experience + JD aware, inline scoring + feedback per answer.
+const COMPANY_PLAYBOOKS: Record<string, string> = {
+  amazon: "Optimize for Leadership Principles (Customer Obsession, Ownership, Dive Deep, Bias for Action). Mix 1 LP behavioral per 2 technical. Expect scale + cost trade-offs.",
+  google: "Emphasize algorithmic rigor, system design at planet scale, and 'Googleyness'. Probe data structures, complexity analysis, and ambiguity handling.",
+  meta: "Move-fast culture. Product-sense + technical depth. For engineering, expect coding + design + behavioral (drive, conflict resolution).",
+  apple: "Cross-functional collaboration, polish, attention to detail. Expect domain depth (silicon, OS, ML, design) and trade-off discussions.",
+  microsoft: "Growth mindset, customer-driven design, and 'one Microsoft' collaboration. Mix coding, design, and impact stories.",
+  netflix: "Keeper test culture. Senior-only bar. Expect freedom-and-responsibility framing, high-judgment decisions, and deep technical ownership.",
+  adobe: "Creativity meets engineering. Probe product thinking, performance optimization, and customer empathy. For data/analytics: storytelling + statistical rigor.",
+  uber: "Marketplace dynamics, real-time systems, geo-distributed design. Expect operational excellence questions.",
+  airbnb: "Design-led engineering. Probe API design, trust/safety thinking, and inclusive product judgment.",
+  stripe: "Developer-empathy and API ergonomics. Distributed systems, idempotency, money correctness, and writing quality.",
+};
+function companyHint(name?: string | null): string {
+  if (!name) return "Use a generalist top-tier tech bar.";
+  const k = name.toLowerCase().trim();
+  for (const key of Object.keys(COMPANY_PLAYBOOKS)) {
+    if (k.includes(key)) return COMPANY_PLAYBOOKS[key];
+  }
+  return `Tailor cultural cues to ${name}: research-style depth, expected scale, and known engineering values.`;
+}
+function expHint(level?: string | null): string {
+  switch ((level ?? "").toLowerCase()) {
+    case "fresher": return "Fresher (0–2y). Heavier on fundamentals, projects, internships, learning velocity. Avoid deep production war-stories.";
+    case "junior":  return "Junior (2–4y). Expect ownership of features, debugging real systems, and growing system-design intuition.";
+    case "mid":     return "Mid (4–7y). Expect end-to-end ownership, trade-off articulation, mentoring signals, and system design.";
+    case "senior":  return "Senior (7+y). Expect architecture, cross-team influence, hiring/standards, and ambiguous-problem decomposition.";
+    default:        return level ? `Custom: ${level}.` : "Calibrate to a mid-level bar by default.";
+  }
+}
+
 export const interviewTurn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({
@@ -132,8 +163,19 @@ export const interviewTurn = createServerFn({ method: "POST" })
     const { data: messages } = await supabase
       .from("interview_messages").select("*").eq("session_id", data.sessionId).order("created_at");
 
+    const company = (session as any).company as string | null;
+    const experience = (session as any).experience_level as string | null;
+    const jd = (session as any).job_description as string | null;
+    const contextHeader = [
+      `ROLE: ${session.role_target}`,
+      `EXPERIENCE: ${expHint(experience ?? session.difficulty)}`,
+      `COMPANY: ${company ?? "Generic top-tier"} — ${companyHint(company)}`,
+      jd ? `JOB DESCRIPTION:\n${jd.slice(0, 2000)}` : "",
+    ].filter(Boolean).join("\n");
+
     // Save user message + score it
     let userScore: number | null = null;
+    let userFeedback: string | null = null;
     if (data.userAnswer) {
       const { output: ev } = await generateText({
         model: gateway(),
@@ -146,18 +188,32 @@ export const interviewTurn = createServerFn({ method: "POST" })
               depth: z.number().min(0).max(100),
             }),
             feedback: z.string(),
+            what_was_good: z.array(z.string()).max(4),
+            what_to_improve: z.array(z.string()).max(4),
+            ideal_answer_sketch: z.string(),
           }),
         }),
-        prompt: `Evaluate this interview answer for a ${session.role_target} (${session.difficulty}) candidate.\nQUESTION: ${[...(messages ?? [])].reverse().find((m: { role: string }) => m.role === "assistant")?.content ?? ""}\nANSWER: ${data.userAnswer}`,
+        prompt: `You are a senior interviewer grading like a professional teacher.\n${contextHeader}\nQUESTION: ${[...(messages ?? [])].reverse().find((m: { role: string }) => m.role === "assistant")?.content ?? ""}\nANSWER: ${data.userAnswer}\n\nReturn JSON with score (0-100), signals, 1-2 sentence feedback, 2-3 concrete 'what was good' points, 2-3 'what to improve' points, and a 3-sentence sketch of an ideal answer.`,
       });
       userScore = ev.score;
+      userFeedback = ev.feedback;
       await supabase.from("interview_messages").insert({
-        session_id: data.sessionId, role: "user", content: data.userAnswer, score: ev.score, signals: ev.signals,
+        session_id: data.sessionId,
+        role: "user",
+        content: data.userAnswer,
+        score: ev.score,
+        signals: {
+          ...ev.signals,
+          feedback: ev.feedback,
+          what_was_good: ev.what_was_good,
+          what_to_improve: ev.what_to_improve,
+          ideal_answer_sketch: ev.ideal_answer_sketch,
+        },
       });
     }
 
     const turnCount = (session.question_count ?? 0) + (data.userAnswer ? 1 : 0);
-    const MAX_QUESTIONS = 6;
+    const MAX_QUESTIONS = 10;
     const isFinal = turnCount >= MAX_QUESTIONS;
 
     if (isFinal) {
@@ -174,7 +230,7 @@ export const interviewTurn = createServerFn({ method: "POST" })
             summary: z.string(),
           }),
         }),
-        prompt: `Summarize this ${session.role_target} interview. Return overall_score (avg of answer scores), readiness_score, strengths, gaps (skills to study), and a 3-sentence summary.\n\nTRANSCRIPT:\n${(allMsgs || []).map(m => `${m.role.toUpperCase()}: ${m.content}`).join("\n")}`,
+        prompt: `Summarize this 10-question interview for ${session.role_target}${company ? ` at ${company}` : ""}. Return overall_score (avg of answer scores), readiness_score (0-100 hire-readiness), 3-5 strengths, 3-5 gaps (skills to study), and a 3-sentence summary written like a professional teacher's report card.\n\n${contextHeader}\n\nTRANSCRIPT:\n${(allMsgs || []).map(m => `${m.role.toUpperCase()}: ${m.content}`).join("\n")}`,
       });
       await supabase.from("interview_sessions").update({
         status: "completed",
@@ -185,7 +241,6 @@ export const interviewTurn = createServerFn({ method: "POST" })
         gaps: fin.gaps,
         summary: fin.summary,
       }).eq("id", data.sessionId);
-      // Seed learning items from gaps
       if (fin.gaps?.length) {
         await supabase.from("learning_items").insert(
           fin.gaps.slice(0, 8).map(skill => ({
@@ -193,21 +248,22 @@ export const interviewTurn = createServerFn({ method: "POST" })
           })),
         );
       }
-      return { done: true, final: fin, userScore };
+      return { done: true, final: fin, userScore, userFeedback };
     }
 
-    // Generate next question
+    // Generate next question — adaptive, company/role/experience tuned
     const transcript = (messages || []).map(m => `${m.role.toUpperCase()}: ${m.content}`).join("\n");
+    const qNumber = turnCount + 1;
     const { text: nextQ } = await generateText({
       model: gateway(),
-      prompt: `You are an adaptive interviewer for a ${session.difficulty} ${session.role_target}. Based on the transcript, ask ONE next question that probes the candidate's weak areas. Return only the question.\n\nTRANSCRIPT SO FAR:\n${transcript}${data.userAnswer ? `\nUSER: ${data.userAnswer}` : ""}`,
+      prompt: `You are an adaptive interviewer running question ${qNumber} of 10.\n${contextHeader}\n\nRules:\n- Ask ONE focused question only. No preamble, no numbering.\n- Vary across: fundamentals, applied/coding, system design, behavioral, role-specific scenarios.\n- Adapt to the candidate's weak signals from prior answers.\n- If COMPANY is set, bias question style to that company's known interview culture.\n\nTRANSCRIPT SO FAR:\n${transcript}${data.userAnswer ? `\nUSER: ${data.userAnswer}` : ""}`,
     });
     await supabase.from("interview_messages").insert({
       session_id: data.sessionId, role: "assistant", content: nextQ.trim(),
     });
     await supabase.from("interview_sessions").update({ question_count: turnCount }).eq("id", data.sessionId);
 
-    return { done: false, question: nextQ.trim(), userScore };
+    return { done: false, question: nextQ.trim(), userScore, userFeedback };
   });
 
 // ------------- RECRUITER: CANDIDATE SUMMARY -------------

@@ -112,10 +112,13 @@ export type Database = {
       interview_sessions: {
         Row: {
           candidate_id: string
+          company: string | null
           created_at: string
           difficulty: string
+          experience_level: string | null
           gaps: string[] | null
           id: string
+          job_description: string | null
           job_id: string | null
           overall_score: number | null
           question_count: number
@@ -128,10 +131,13 @@ export type Database = {
         }
         Insert: {
           candidate_id: string
+          company?: string | null
           created_at?: string
           difficulty?: string
+          experience_level?: string | null
           gaps?: string[] | null
           id?: string
+          job_description?: string | null
           job_id?: string | null
           overall_score?: number | null
           question_count?: number
@@ -144,10 +150,13 @@ export type Database = {
         }
         Update: {
           candidate_id?: string
+          company?: string | null
           created_at?: string
           difficulty?: string
+          experience_level?: string | null
           gaps?: string[] | null
           id?: string
+          job_description?: string | null
           job_id?: string | null
           overall_score?: number | null
           question_count?: number
