@@ -50,6 +50,10 @@ function AuthPage() {
   }, []);
 
   useEffect(() => {
+    // Only auto-redirect when the user landed on the sign-in tab.
+    // If they came here to register (or were sent with an explicit ?redirect),
+    // respect that intent even if a stale session exists.
+    if (initialMode !== "login") return;
     supabase.auth.getSession().then(async ({ data }) => {
       if (!data.session) return;
       const { data: roles } = await supabase
@@ -60,7 +64,7 @@ function AuthPage() {
       const dest = redirect ?? (has("recruiter") ? "/recruiter" : "/candidate");
       navigate({ to: dest });
     });
-  }, [navigate, redirect]);
+  }, [navigate, redirect, initialMode]);
 
   const isRecruiter = role === "recruiter";
 
