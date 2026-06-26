@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { ArrowLeft, Eye, EyeOff, Loader2, Sparkles, Copy, ShieldCheck } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
+import { ensureDemoAccounts } from "@/lib/seed.functions";
 import { MeshBackground } from "@/components/MeshBackground";
 import { CreatorShowcase } from "@/components/CreatorShowcase";
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,15 @@ function AuthPage() {
   const [mode, setMode] = useState<"login" | "register" | "forgot">(initialMode);
 
   useEffect(() => { setRole(initialRole); setMode(initialMode); }, [initialRole, initialMode]);
+
+  // Idempotently provision demo accounts on first visit so "Use demo" always works.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (sessionStorage.getItem("adika_demo_seeded") === "1") return;
+    ensureDemoAccounts()
+      .then(() => sessionStorage.setItem("adika_demo_seeded", "1"))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
