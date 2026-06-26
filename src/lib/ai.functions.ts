@@ -311,21 +311,26 @@ export const analyzeResumeForRole = createServerFn({ method: "POST" })
     const { data: resume } = await supabase.from("resumes").select("*").eq("id", data.resumeId).eq("user_id", userId).single();
     if (!resume) throw new Error("Resume not found");
 
-    const { output } = await generateText({
-      model: gateway(),
-      output: Output.object({
-        schema: z.object({
-          role_fit_score: z.number().min(0).max(100),
-          verdict: z.string(),
-          plus_points: z.array(z.object({ title: z.string(), detail: z.string() })),
-          drawbacks: z.array(z.object({ title: z.string(), detail: z.string(), severity: z.enum(["low","medium","high"]) })),
-          missing_skills: z.array(z.string()),
-          action_items: z.array(z.string()),
-          tailored_summary: z.string(),
-        }),
-      }),
-      prompt: `You are a senior tech recruiter coaching a STUDENT/early-career candidate. Analyze this resume for the specific target role and produce honest, role-specific plus points and drawbacks.\n\nTARGET ROLE: ${data.role}\nTARGET COMPANY: ${data.company ?? "(any)"}\nCANDIDATE EXPERIENCE LEVEL: ${data.experienceLevel}\nJOB DESCRIPTION:\n${data.jobDescription ?? "(none provided — infer industry-standard expectations for the role)"}\n\nRESUME:\n${JSON.stringify(resume.content).slice(0, 6000)}\n\nReturn:\n- role_fit_score (0-100)\n- verdict (one sentence)\n- 3-5 plus_points (concrete strengths for THIS role)\n- 3-6 drawbacks (gaps/weaknesses; mark severity)\n- missing_skills (lowercase tech/skill keywords)\n- 4-6 action_items (specific things to do in the next 30 days)\n- tailored_summary (one rewritten resume summary aimed at this role)`,
+    const FeedbackSchema = z.object({
+      role_fit_score: z.number().min(0).max(100),
+      verdict: z.string(),
+      plus_points: z.array(z.object({ title: z.string(), detail: z.string() })),
+      drawbacks: z.array(z.object({ title: z.string(), detail: z.string(), severity: z.enum(["low","medium","high"]) })),
+      missing_skills: z.array(z.string()),
+      action_items: z.array(z.string()),
+      tailored_summary: z.string(),
     });
+
+    const { text } = await generateText({
+      model: gateway(),
+      prompt: `You are a senior tech recruiter coaching a STUDENT/early-career candidate. Analyze this resume for the specific target role and produce honest, role-specific plus points and drawbacks.\n\nTARGET ROLE: ${data.role}\nTARGET COMPANY: ${data.company ?? "(any)"}\nCANDIDATE EXPERIENCE LEVEL: ${data.experienceLevel}\nJOB DESCRIPTION:\n${data.jobDescription ?? "(none provided — infer industry-standard expectations for the role)"}\n\nRESUME:\n${JSON.stringify(resume.content).slice(0, 6000)}\n\nReturn ONLY a JSON object (no markdown, no commentary) with EXACTLY this shape:\n{\n  "role_fit_score": number 0-100,\n  "verdict": "one sentence",\n  "plus_points": [{ "title": string, "detail": string }, ... 3-5 items],\n  "drawbacks": [{ "title": string, "detail": string, "severity": "low"|"medium"|"high" }, ... 3-6 items],\n  "missing_skills": [lowercase skill strings],\n  "action_items": [4-6 concrete 30-day actions],\n  "tailored_summary": "one rewritten resume summary"\n}`,
+    });
+
+    const cleaned = text.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
+    const start = cleaned.search(/[\{]/);
+    const end = cleaned.lastIndexOf("}");
+    if (start === -1 || end === -1) throw new Error("AI did not return JSON");
+    const output = FeedbackSchema.parse(JSON.parse(cleaned.slice(start, end + 1)));
 
     await supabase.from("resumes").update({
       role_target: data.role,
