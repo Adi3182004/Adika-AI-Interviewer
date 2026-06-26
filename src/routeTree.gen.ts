@@ -33,6 +33,7 @@ import { Route as AuthenticatedCandidateJobsIndexRouteImport } from './routes/_a
 import { Route as AuthenticatedCandidateInterviewsIndexRouteImport } from './routes/_authenticated/candidate/interviews/index'
 import { Route as AuthenticatedCandidateGapIndexRouteImport } from './routes/_authenticated/candidate/gap/index'
 import { Route as AuthenticatedCandidateCompaniesIndexRouteImport } from './routes/_authenticated/candidate/companies/index'
+import { Route as AuthenticatedTeamInviteTokenRouteImport } from './routes/_authenticated/team/invite/$token'
 import { Route as AuthenticatedRecruiterPipelineIdRouteImport } from './routes/_authenticated/recruiter/pipeline/$id'
 import { Route as AuthenticatedCandidateResumesIdRouteImport } from './routes/_authenticated/candidate/resumes/$id'
 import { Route as AuthenticatedCandidateInterviewsIdRouteImport } from './routes/_authenticated/candidate/interviews/$id'
@@ -175,6 +176,12 @@ const AuthenticatedCandidateCompaniesIndexRoute =
     path: '/companies/',
     getParentRoute: () => AuthenticatedCandidateRouteRoute,
   } as any)
+const AuthenticatedTeamInviteTokenRoute =
+  AuthenticatedTeamInviteTokenRouteImport.update({
+    id: '/team/invite/$token',
+    path: '/team/invite/$token',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedRecruiterPipelineIdRoute =
   AuthenticatedRecruiterPipelineIdRouteImport.update({
     id: '/pipeline/$id',
@@ -206,6 +213,7 @@ export interface FileRoutesByFullPath {
   '/candidate/interviews/$id': typeof AuthenticatedCandidateInterviewsIdRoute
   '/candidate/resumes/$id': typeof AuthenticatedCandidateResumesIdRoute
   '/recruiter/pipeline/$id': typeof AuthenticatedRecruiterPipelineIdRoute
+  '/team/invite/$token': typeof AuthenticatedTeamInviteTokenRoute
   '/candidate/companies/': typeof AuthenticatedCandidateCompaniesIndexRoute
   '/candidate/gap/': typeof AuthenticatedCandidateGapIndexRoute
   '/candidate/interviews/': typeof AuthenticatedCandidateInterviewsIndexRoute
@@ -232,6 +240,7 @@ export interface FileRoutesByTo {
   '/candidate/interviews/$id': typeof AuthenticatedCandidateInterviewsIdRoute
   '/candidate/resumes/$id': typeof AuthenticatedCandidateResumesIdRoute
   '/recruiter/pipeline/$id': typeof AuthenticatedRecruiterPipelineIdRoute
+  '/team/invite/$token': typeof AuthenticatedTeamInviteTokenRoute
   '/candidate/companies': typeof AuthenticatedCandidateCompaniesIndexRoute
   '/candidate/gap': typeof AuthenticatedCandidateGapIndexRoute
   '/candidate/interviews': typeof AuthenticatedCandidateInterviewsIndexRoute
@@ -262,6 +271,7 @@ export interface FileRoutesById {
   '/_authenticated/candidate/interviews/$id': typeof AuthenticatedCandidateInterviewsIdRoute
   '/_authenticated/candidate/resumes/$id': typeof AuthenticatedCandidateResumesIdRoute
   '/_authenticated/recruiter/pipeline/$id': typeof AuthenticatedRecruiterPipelineIdRoute
+  '/_authenticated/team/invite/$token': typeof AuthenticatedTeamInviteTokenRoute
   '/_authenticated/candidate/companies/': typeof AuthenticatedCandidateCompaniesIndexRoute
   '/_authenticated/candidate/gap/': typeof AuthenticatedCandidateGapIndexRoute
   '/_authenticated/candidate/interviews/': typeof AuthenticatedCandidateInterviewsIndexRoute
@@ -292,6 +302,7 @@ export interface FileRouteTypes {
     | '/candidate/interviews/$id'
     | '/candidate/resumes/$id'
     | '/recruiter/pipeline/$id'
+    | '/team/invite/$token'
     | '/candidate/companies/'
     | '/candidate/gap/'
     | '/candidate/interviews/'
@@ -318,6 +329,7 @@ export interface FileRouteTypes {
     | '/candidate/interviews/$id'
     | '/candidate/resumes/$id'
     | '/recruiter/pipeline/$id'
+    | '/team/invite/$token'
     | '/candidate/companies'
     | '/candidate/gap'
     | '/candidate/interviews'
@@ -347,6 +359,7 @@ export interface FileRouteTypes {
     | '/_authenticated/candidate/interviews/$id'
     | '/_authenticated/candidate/resumes/$id'
     | '/_authenticated/recruiter/pipeline/$id'
+    | '/_authenticated/team/invite/$token'
     | '/_authenticated/candidate/companies/'
     | '/_authenticated/candidate/gap/'
     | '/_authenticated/candidate/interviews/'
@@ -542,6 +555,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCandidateCompaniesIndexRouteImport
       parentRoute: typeof AuthenticatedCandidateRouteRoute
     }
+    '/_authenticated/team/invite/$token': {
+      id: '/_authenticated/team/invite/$token'
+      path: '/team/invite/$token'
+      fullPath: '/team/invite/$token'
+      preLoaderRoute: typeof AuthenticatedTeamInviteTokenRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/recruiter/pipeline/$id': {
       id: '/_authenticated/recruiter/pipeline/$id'
       path: '/pipeline/$id'
@@ -647,6 +667,7 @@ const AuthenticatedRecruiterRouteRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedCandidateRouteRoute: typeof AuthenticatedCandidateRouteRouteWithChildren
   AuthenticatedRecruiterRouteRoute: typeof AuthenticatedRecruiterRouteRouteWithChildren
+  AuthenticatedTeamInviteTokenRoute: typeof AuthenticatedTeamInviteTokenRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -654,6 +675,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedCandidateRouteRouteWithChildren,
   AuthenticatedRecruiterRouteRoute:
     AuthenticatedRecruiterRouteRouteWithChildren,
+  AuthenticatedTeamInviteTokenRoute: AuthenticatedTeamInviteTokenRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
