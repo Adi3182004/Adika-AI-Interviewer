@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { exportInterviewReport } from "@/lib/interview-export";
+import { useTeamRecruiterIds } from "@/hooks/use-team-recruiter-ids";
 
 export const Route = createFileRoute("/_authenticated/recruiter/interviews/")({
   head: () => ({ meta: [{ title: "Interview Replays" }] }),
