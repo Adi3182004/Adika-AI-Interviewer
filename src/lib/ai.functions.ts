@@ -207,3 +207,176 @@ export const summarizeCandidate = createServerFn({ method: "POST" })
     });
     return { summary: text.trim() };
   });
+
+// ------------- UPLOAD & PARSE RESUME (PDF/DOCX/TXT base64 data URL) -------------
+const ResumeContentSchema = z.object({
+  summary: z.string(),
+  experience: z.array(z.object({ company: z.string(), role: z.string(), period: z.string(), bullets: z.string() })),
+  education: z.array(z.object({ school: z.string(), degree: z.string(), year: z.string() })),
+  skills: z.array(z.string()),
+  projects: z.array(z.object({ name: z.string(), description: z.string() })),
+});
+
+export const uploadAndParseResume = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({
+    title: z.string().min(1).max(120),
+    fileName: z.string(),
+    fileType: z.string(),
+    fileDataUrl: z.string().startsWith("data:"),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const key = process.env.LOVABLE_API_KEY;
+    if (!key) throw new Error("Missing LOVABLE_API_KEY");
+
+    // Call gateway directly to send file content block
+    const isText = data.fileType.startsWith("text/") || data.fileName.toLowerCase().endsWith(".txt");
+    const isImage = data.fileType.startsWith("image/");
+
+    const userContent: any[] = [
+      { type: "text", text: "Extract this resume into clean structured JSON. Use empty strings/arrays for missing fields. For experience.bullets, join achievement lines with newlines." },
+    ];
+    if (isText) {
+      // decode base64 text
+      const b64 = data.fileDataUrl.split(",")[1] ?? "";
+      const decoded = Buffer.from(b64, "base64").toString("utf-8");
+      userContent[0].text += `\n\nRESUME TEXT:\n${decoded.slice(0, 30000)}`;
+    } else if (isImage) {
+      userContent.push({ type: "image_url", image_url: { url: data.fileDataUrl } });
+    } else {
+      userContent.push({ type: "file", file: { filename: data.fileName, file_data: data.fileDataUrl } });
+    }
+
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
+      body: JSON.stringify({
+        model: MODEL,
+        messages: [{ role: "user", content: userContent }],
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "resume",
+            strict: true,
+            schema: {
+              type: "object",
+              additionalProperties: false,
+              required: ["summary", "experience", "education", "skills", "projects"],
+              properties: {
+                summary: { type: "string" },
+                experience: { type: "array", items: { type: "object", additionalProperties: false, required: ["company","role","period","bullets"], properties: { company: { type: "string" }, role: { type: "string" }, period: { type: "string" }, bullets: { type: "string" } } } },
+                education: { type: "array", items: { type: "object", additionalProperties: false, required: ["school","degree","year"], properties: { school: { type: "string" }, degree: { type: "string" }, year: { type: "string" } } } },
+                skills: { type: "array", items: { type: "string" } },
+                projects: { type: "array", items: { type: "object", additionalProperties: false, required: ["name","description"], properties: { name: { type: "string" }, description: { type: "string" } } } },
+              },
+            },
+          },
+        },
+      }),
+    });
+    if (!res.ok) {
+      const t = await res.text();
+      throw new Error(`Parse failed [${res.status}]: ${t.slice(0, 200)}`);
+    }
+    const json = await res.json();
+    const raw = json.choices?.[0]?.message?.content ?? "{}";
+    const parsed = ResumeContentSchema.parse(JSON.parse(raw));
+
+    const { data: existing } = await supabase.from("resumes").select("id").eq("user_id", userId);
+    const { data: inserted, error: insErr } = await supabase.from("resumes").insert({
+      user_id: userId,
+      title: data.title,
+      content: parsed as any,
+      parsed_skills: parsed.skills.map(s => s.toLowerCase()),
+      is_primary: !(existing && existing.length),
+    }).select().single();
+    if (insErr || !inserted) throw new Error(insErr?.message ?? "Insert failed");
+
+    return { resumeId: inserted.id };
+  });
+
+// ------------- ROLE-TARGETED ANALYSIS (plus points / drawbacks) -------------
+export const analyzeResumeForRole = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({
+    resumeId: z.string().uuid(),
+    role: z.string().min(2).max(120),
+    company: z.string().max(120).optional(),
+    experienceLevel: z.string().min(1).max(60),
+    jobDescription: z.string().max(8000).optional(),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: resume } = await supabase.from("resumes").select("*").eq("id", data.resumeId).eq("user_id", userId).single();
+    if (!resume) throw new Error("Resume not found");
+
+    const { output } = await generateText({
+      model: gateway(),
+      output: Output.object({
+        schema: z.object({
+          role_fit_score: z.number().min(0).max(100),
+          verdict: z.string(),
+          plus_points: z.array(z.object({ title: z.string(), detail: z.string() })),
+          drawbacks: z.array(z.object({ title: z.string(), detail: z.string(), severity: z.enum(["low","medium","high"]) })),
+          missing_skills: z.array(z.string()),
+          action_items: z.array(z.string()),
+          tailored_summary: z.string(),
+        }),
+      }),
+      prompt: `You are a senior tech recruiter coaching a STUDENT/early-career candidate. Analyze this resume for the specific target role and produce honest, role-specific plus points and drawbacks.\n\nTARGET ROLE: ${data.role}\nTARGET COMPANY: ${data.company ?? "(any)"}\nCANDIDATE EXPERIENCE LEVEL: ${data.experienceLevel}\nJOB DESCRIPTION:\n${data.jobDescription ?? "(none provided — infer industry-standard expectations for the role)"}\n\nRESUME:\n${JSON.stringify(resume.content).slice(0, 6000)}\n\nReturn:\n- role_fit_score (0-100)\n- verdict (one sentence)\n- 3-5 plus_points (concrete strengths for THIS role)\n- 3-6 drawbacks (gaps/weaknesses; mark severity)\n- missing_skills (lowercase tech/skill keywords)\n- 4-6 action_items (specific things to do in the next 30 days)\n- tailored_summary (one rewritten resume summary aimed at this role)`,
+    });
+
+    await supabase.from("resumes").update({
+      role_target: data.role,
+      targeted_feedback: { ...output, company: data.company, experience_level: data.experienceLevel, generated_at: new Date().toISOString() } as any,
+    }).eq("id", data.resumeId);
+
+    // Seed missing skills into learning items
+    if (output.missing_skills?.length) {
+      const existing = await supabase.from("learning_items").select("skill").eq("candidate_id", userId);
+      const have = new Set((existing.data ?? []).map(r => r.skill.toLowerCase()));
+      const toInsert = output.missing_skills.filter(s => !have.has(s.toLowerCase())).slice(0, 6);
+      if (toInsert.length) {
+        await supabase.from("learning_items").insert(toInsert.map(skill => ({ candidate_id: userId, skill, status: "todo" })));
+      }
+    }
+
+    return output;
+  });
+
+// ------------- LEARNING ROADMAP -------------
+export const generateLearningRoadmap = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ itemId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: item } = await supabase.from("learning_items").select("*").eq("id", data.itemId).eq("candidate_id", userId).single();
+    if (!item) throw new Error("Item not found");
+
+    const { output } = await generateText({
+      model: gateway(),
+      output: Output.object({
+        schema: z.object({
+          skill: z.string(),
+          overview: z.string(),
+          estimated_weeks: z.number().min(1).max(52),
+          prerequisites: z.array(z.string()),
+          phases: z.array(z.object({
+            week_range: z.string(),
+            title: z.string(),
+            goals: z.array(z.string()),
+            topics: z.array(z.string()),
+            project: z.string(),
+            resources: z.array(z.object({ name: z.string(), type: z.enum(["course","docs","book","video","article","practice"]), url: z.string().optional() })),
+          })),
+          milestones: z.array(z.string()),
+          final_capstone: z.string(),
+        }),
+      }),
+      prompt: `Build a detailed week-by-week learning roadmap for a student to master "${item.skill}" from scratch to job-ready. Include 3-5 phases, hands-on projects per phase, concrete resources (courses, docs, videos, practice platforms), and a final capstone. Be specific (mention real platforms: freeCodeCamp, MDN, LeetCode, official docs, Coursera, YouTube channels, etc.).`,
+    });
+
+    await supabase.from("learning_items").update({ roadmap: output as any }).eq("id", data.itemId);
+    return output;
+  });
