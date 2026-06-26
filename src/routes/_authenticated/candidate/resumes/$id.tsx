@@ -32,6 +32,28 @@ function ResumeEditor() {
   const qc = useQueryClient();
   const analyze = useServerFn(analyzeResume);
   const improve = useServerFn(improveResumeSection);
+  const targetAnalyze = useServerFn(analyzeResumeForRole);
+  const [roleForm, setRoleForm] = useState({ role: "", company: "", experienceLevel: "Student / Intern", jobDescription: "" });
+  const [targeting, setTargeting] = useState(false);
+
+  async function runRoleAnalysis() {
+    if (!roleForm.role.trim()) return toast.error("Enter a target role");
+    setTargeting(true);
+    try {
+      await targetAnalyze({ data: {
+        resumeId: id,
+        role: roleForm.role,
+        company: roleForm.company || undefined,
+        experienceLevel: roleForm.experienceLevel,
+        jobDescription: roleForm.jobDescription || undefined,
+      }});
+      toast.success("Role analysis ready");
+      qc.invalidateQueries({ queryKey: ["resume", id] });
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed");
+    }
+    setTargeting(false);
+  }
 
   const { data: resume } = useQuery({
     queryKey: ["resume", id],
