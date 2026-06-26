@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Plus, Globe, Eye, EyeOff, Trash2 } from "lucide-react";
+import { useTeamRecruiterIds } from "@/hooks/use-team-recruiter-ids";
 import { RecruiterShell } from "@/components/RecruiterShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,12 +22,12 @@ function Jobs() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ title: "", company: "", location: "", seniority: "mid", employment_type: "full_time", salary_min: "", salary_max: "", description: "", skills: "" });
 
+  const { data: teamIds = [] } = useTeamRecruiterIds();
   const { data: jobs } = useQuery({
-    queryKey: ["my-jobs"],
+    queryKey: ["my-jobs", teamIds],
+    enabled: teamIds.length > 0,
     queryFn: async () => {
-      const { data: u } = await supabase.auth.getUser();
-      if (!u.user) return [];
-      const { data } = await supabase.from("jobs").select("*, applications(id)").eq("recruiter_id", u.user.id).order("created_at", { ascending: false });
+      const { data } = await supabase.from("jobs").select("*, applications(id)").in("recruiter_id", teamIds).order("created_at", { ascending: false });
       return data ?? [];
     },
   });

@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { summarizeCandidate } from "@/lib/ai.functions";
+import { useTeamRecruiterIds } from "@/hooks/use-team-recruiter-ids";
 
 export const Route = createFileRoute("/_authenticated/recruiter/candidates/")({
   head: () => ({ meta: [{ title: "Candidates — Recruiter" }] }),
@@ -36,15 +37,15 @@ function Candidates() {
   const [skillFilter, setSkillFilter] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<"match" | "ats" | "recent">("match");
 
+  const { data: teamIds = [] } = useTeamRecruiterIds();
   const { data: apps } = useQuery({
-    queryKey: ["all-applications"],
+    queryKey: ["all-applications", teamIds],
+    enabled: teamIds.length > 0,
     queryFn: async () => {
-      const { data: u } = await supabase.auth.getUser();
-      if (!u.user) return [];
       const { data } = await supabase
         .from("applications")
         .select("*, profiles!applications_candidate_id_fkey(full_name,email,experience_level,education), jobs!inner(title,recruiter_id,skills,description), resumes(parsed_skills,ats_score,content)")
-        .eq("jobs.recruiter_id", u.user.id)
+        .in("jobs.recruiter_id", teamIds)
         .order("match_score", { ascending: false });
       return data ?? [];
     },

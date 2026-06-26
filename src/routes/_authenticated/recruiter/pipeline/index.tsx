@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { RecruiterShell } from "@/components/RecruiterShell";
 import { ArrowRight, KanbanSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useTeamRecruiterIds } from "@/hooks/use-team-recruiter-ids";
 
 export const Route = createFileRoute("/_authenticated/recruiter/pipeline/")({
   head: () => ({ meta: [{ title: "Pipeline — Recruiter" }] }),
@@ -10,12 +11,12 @@ export const Route = createFileRoute("/_authenticated/recruiter/pipeline/")({
 });
 
 function PipelineIndex() {
+  const { data: teamIds = [] } = useTeamRecruiterIds();
   const { data: jobs } = useQuery({
-    queryKey: ["pipeline-jobs"],
+    queryKey: ["pipeline-jobs", teamIds],
+    enabled: teamIds.length > 0,
     queryFn: async () => {
-      const { data: u } = await supabase.auth.getUser();
-      if (!u.user) return [];
-      const { data } = await supabase.from("jobs").select("id,title,status,applications(id,stage)").eq("recruiter_id", u.user.id);
+      const { data } = await supabase.from("jobs").select("id,title,status,applications(id,stage)").in("recruiter_id", teamIds);
       return data ?? [];
     },
   });

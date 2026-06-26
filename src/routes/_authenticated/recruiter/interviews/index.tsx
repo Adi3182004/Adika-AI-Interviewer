@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { exportInterviewReport } from "@/lib/interview-export";
+import { useTeamRecruiterIds } from "@/hooks/use-team-recruiter-ids";
 
 export const Route = createFileRoute("/_authenticated/recruiter/interviews/")({
   head: () => ({ meta: [{ title: "Interview Replays" }] }),
@@ -30,15 +31,15 @@ function Replays() {
   const [playing, setPlaying] = useState(false);
   const [downloading, setDownloading] = useState(false);
 
+  const { data: teamIds = [] } = useTeamRecruiterIds();
   const { data: sessions } = useQuery({
-    queryKey: ["recruiter-sessions"],
+    queryKey: ["recruiter-sessions", teamIds],
+    enabled: teamIds.length > 0,
     queryFn: async () => {
-      const { data: u } = await supabase.auth.getUser();
-      if (!u.user) return [];
       const { data } = await supabase
         .from("interview_sessions")
         .select("*, jobs!inner(title,recruiter_id), profiles!interview_sessions_candidate_id_fkey(full_name,email)")
-        .eq("jobs.recruiter_id", u.user.id)
+        .in("jobs.recruiter_id", teamIds)
         .order("created_at", { ascending: false });
       return data ?? [];
     },

@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Briefcase, Users, KanbanSquare, ArrowRight, Bot } from "lucide-react";
 import { RecruiterShell } from "@/components/RecruiterShell";
 import { supabase } from "@/integrations/supabase/client";
+import { useTeamRecruiterIds } from "@/hooks/use-team-recruiter-ids";
 
 export const Route = createFileRoute("/_authenticated/recruiter/")({
   head: () => ({ meta: [{ title: "Dashboard — Recruiter Pro" }] }),
@@ -10,15 +11,17 @@ export const Route = createFileRoute("/_authenticated/recruiter/")({
 });
 
 function RecruiterDashboard() {
+  const { data: teamIds = [] } = useTeamRecruiterIds();
   const { data } = useQuery({
-    queryKey: ["recruiter-dashboard"],
+    queryKey: ["recruiter-dashboard", teamIds],
+    enabled: teamIds.length > 0,
     queryFn: async () => {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) return null;
       const [jobs, apps, sessions, profile] = await Promise.all([
-        supabase.from("jobs").select("id,title,status").eq("recruiter_id", u.user.id),
-        supabase.from("applications").select("id,stage,match_score,job_id,created_at,candidate_id,jobs!inner(recruiter_id)").eq("jobs.recruiter_id", u.user.id),
-        supabase.from("interview_sessions").select("id,role_target,overall_score,created_at,job_id,jobs!inner(recruiter_id)").eq("jobs.recruiter_id", u.user.id).order("created_at", { ascending: false }).limit(5),
+        supabase.from("jobs").select("id,title,status").in("recruiter_id", teamIds),
+        supabase.from("applications").select("id,stage,match_score,job_id,created_at,candidate_id,jobs!inner(recruiter_id)").in("jobs.recruiter_id", teamIds),
+        supabase.from("interview_sessions").select("id,role_target,overall_score,created_at,job_id,jobs!inner(recruiter_id)").in("jobs.recruiter_id", teamIds).order("created_at", { ascending: false }).limit(5),
         supabase.from("profiles").select("full_name,company_name").eq("id", u.user.id).maybeSingle(),
       ]);
       return { jobs: jobs.data ?? [], apps: apps.data ?? [], sessions: sessions.data ?? [], profile: profile.data };
