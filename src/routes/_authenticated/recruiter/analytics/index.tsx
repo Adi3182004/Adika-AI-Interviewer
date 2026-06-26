@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from "recharts";
 import { RecruiterShell } from "@/components/RecruiterShell";
 import { supabase } from "@/integrations/supabase/client";
+import { useTeamRecruiterIds } from "@/hooks/use-team-recruiter-ids";
 
 const STAGES = ["new", "screen", "interview", "offer", "hired", "rejected"] as const;
 
@@ -12,14 +13,14 @@ export const Route = createFileRoute("/_authenticated/recruiter/analytics/")({
 });
 
 function Analytics() {
+  const { data: teamIds = [] } = useTeamRecruiterIds();
   const { data } = useQuery({
-    queryKey: ["analytics"],
+    queryKey: ["analytics", teamIds],
+    enabled: teamIds.length > 0,
     queryFn: async () => {
-      const { data: u } = await supabase.auth.getUser();
-      if (!u.user) return null;
       const [apps, jobs] = await Promise.all([
-        supabase.from("applications").select("stage,match_score,created_at,jobs!inner(recruiter_id)").eq("jobs.recruiter_id", u.user.id),
-        supabase.from("jobs").select("id,status").eq("recruiter_id", u.user.id),
+        supabase.from("applications").select("stage,match_score,created_at,jobs!inner(recruiter_id)").in("jobs.recruiter_id", teamIds),
+        supabase.from("jobs").select("id,status").in("recruiter_id", teamIds),
       ]);
       return { apps: apps.data ?? [], jobs: jobs.data ?? [] };
     },
