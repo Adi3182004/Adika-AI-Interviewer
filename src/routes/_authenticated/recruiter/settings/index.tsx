@@ -91,7 +91,8 @@ function SettingsPage() {
 
   const tabs = [
     { id: "workspace", label: "Workspace", icon: Building2 },
-    { id: "team", label: "Team & Roles", icon: Users },
+    { id: "invites", label: "Recruiter team", icon: UserPlus },
+    { id: "team", label: "Roles", icon: Users },
     { id: "preferences", label: "AI Preferences", icon: Sparkles },
   ] as const;
 
