@@ -2,6 +2,7 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { type ReactNode } from "react";
 import {
   LayoutDashboard, FileText, Briefcase, Bot, GraduationCap, UserCircle2, LogOut, Menu,
+  Wand2, Telescope, Building2, Target,
 } from "lucide-react";
 import { MeshBackground } from "@/components/MeshBackground";
 import { Button } from "@/components/ui/button";
@@ -11,10 +12,14 @@ import { toast } from "sonner";
 
 const nav: Array<{ to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean }> = [
   { to: "/candidate", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { to: "/candidate/resumes", label: "Resume Library", icon: FileText },
+  { to: "/candidate/resumes", label: "Resume Center", icon: FileText },
+  { to: "/candidate/tailor", label: "Resume Tailoring", icon: Wand2 },
+  { to: "/candidate/gap", label: "Gap Analysis", icon: Telescope },
+  { to: "/candidate/companies", label: "Company Research", icon: Building2 },
   { to: "/candidate/jobs", label: "Job Matching", icon: Briefcase },
-  { to: "/candidate/interviews", label: "AI Interviewer", icon: Bot },
-  { to: "/candidate/learning", label: "Learning", icon: GraduationCap },
+  { to: "/candidate/interviews", label: "Adaptive Interview", icon: Bot },
+  { to: "/candidate/readiness", label: "Readiness Hub", icon: Target },
+  { to: "/candidate/learning", label: "Learning Center", icon: GraduationCap },
   { to: "/candidate/profile", label: "Profile", icon: UserCircle2 },
 ];
 
