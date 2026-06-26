@@ -155,14 +155,13 @@ export const ensureDemoAccounts = createServerFn({ method: "POST" }).handler(asy
           company: "Adika Labs",
           location: "Bengaluru / Remote",
           employment_type: "Full-time",
-          experience_level: "senior",
+          seniority: "senior",
           salary_min: 3500000,
           salary_max: 6500000,
           description:
-            "Build the candidate-facing intelligence layer of Adika AI. You'll own end-to-end features from React UI to Postgres schema, with a strong focus on AI-augmented workflows.",
-          requirements: ["5+ years full-stack", "TypeScript + React", "Postgres + SQL fluency", "Comfort with LLM tooling"],
+            "Build the candidate-facing intelligence layer of Adika AI. You'll own end-to-end features from React UI to Postgres schema, with a strong focus on AI-augmented workflows.\n\nRequirements: 5+ years full-stack, TypeScript + React, Postgres + SQL fluency, comfort with LLM tooling.",
           skills: ["TypeScript", "React", "Node.js", "PostgreSQL", "LLM", "AWS"],
-          status: "open",
+          status: "published",
         });
       }
     }
