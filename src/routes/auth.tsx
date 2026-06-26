@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { ArrowLeft, Eye, EyeOff, Loader2, Sparkles, Copy, ShieldCheck } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
+import { ensureDemoAccounts } from "@/lib/seed.functions";
 import { MeshBackground } from "@/components/MeshBackground";
 import { CreatorShowcase } from "@/components/CreatorShowcase";
 import { Button } from "@/components/ui/button";
