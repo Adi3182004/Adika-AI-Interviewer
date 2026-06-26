@@ -127,7 +127,7 @@ export const getTeamRecruiterIds = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase.rpc("team_recruiter_ids");
     if (error) throw new Error(error.message);
-    const ids = (data ?? []).map((r: any) => (typeof r === "string" ? r : r.team_recruiter_ids)) as string[];
+    const ids = (data ?? []) as string[];
     if (!ids.includes(context.userId)) ids.push(context.userId);
     return { ids };
   });
