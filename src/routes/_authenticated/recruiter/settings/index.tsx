@@ -238,3 +238,157 @@ function SettingsPage() {
     </RecruiterShell>
   );
 }
+
+function TeamInvitesPanel() {
+  const qc = useQueryClient();
+  const ensure = useServerFn(ensureMyTeam);
+  const invite = useServerFn(inviteTeammate);
+  const revoke = useServerFn(revokeInvite);
+  const remove = useServerFn(removeTeammate);
+  const rename = useServerFn(renameMyTeam);
+
+  const { data: teamData, isLoading } = useQuery({
+    queryKey: ["my-team"],
+    queryFn: async () => {
+      const { team, role } = await ensure();
+      const [members, invites] = await Promise.all([
+        supabase.from("team_members").select("user_id,role,created_at").eq("team_id", team.id),
+        supabase.from("team_invites").select("id,email,role,token,accepted_at,expires_at,created_at").eq("team_id", team.id).order("created_at", { ascending: false }),
+      ]);
+      const ids = (members.data ?? []).map(m => m.user_id);
+      const profiles = ids.length
+        ? (await supabase.from("profiles").select("id,email,full_name").in("id", ids)).data ?? []
+        : [];
+      return { team, role, members: members.data ?? [], invites: invites.data ?? [], profiles };
+    },
+  });
+
+  const [email, setEmail] = useState("");
+  const [newName, setNewName] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => { if (teamData?.team?.name) setNewName(teamData.team.name); }, [teamData?.team?.name]);
+
+  const isOwner = teamData?.role === "owner";
+
+  async function doInvite() {
+    if (!email.trim()) return;
+    setBusy(true);
+    try {
+      const { invite: inv } = await invite({ data: { email: email.trim().toLowerCase(), role: "member" } });
+      const link = `${window.location.origin}/team/invite/${inv.token}`;
+      await navigator.clipboard.writeText(link).catch(() => {});
+      toast.success("Invite created · link copied", { description: link });
+      setEmail("");
+      qc.invalidateQueries({ queryKey: ["my-team"] });
+    } catch (e: any) { toast.error(e.message ?? "Invite failed"); }
+    setBusy(false);
+  }
+
+  async function doRevoke(id: string) {
+    try { await revoke({ data: { inviteId: id } }); qc.invalidateQueries({ queryKey: ["my-team"] }); toast.success("Invite revoked"); }
+    catch (e: any) { toast.error(e.message ?? "Failed"); }
+  }
+
+  async function doRemove(uid: string) {
+    if (!confirm("Remove this teammate? They will lose access to your team's pipeline.")) return;
+    try { await remove({ data: { userId: uid } }); qc.invalidateQueries({ queryKey: ["my-team"] }); toast.success("Removed"); }
+    catch (e: any) { toast.error(e.message ?? "Failed"); }
+  }
+
+  async function doRename() {
+    if (!newName.trim() || newName === teamData?.team?.name) return;
+    try { await rename({ data: { name: newName.trim() } }); qc.invalidateQueries({ queryKey: ["my-team"] }); toast.success("Team renamed"); }
+    catch (e: any) { toast.error(e.message ?? "Failed"); }
+  }
+
+  function copyLink(token: string) {
+    const link = `${window.location.origin}/team/invite/${token}`;
+    navigator.clipboard.writeText(link).then(() => toast.success("Link copied"));
+  }
+
+  if (isLoading) return <div className="glass mt-6 rounded-2xl p-12 text-center text-sm text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></div>;
+
+  return (
+    <div className="glass mt-6 rounded-2xl p-8 space-y-6">
+      <div className="flex items-center justify-between border-b border-gold/20 pb-4">
+        <div className="flex items-center gap-3">
+          <div className="grid h-10 w-10 place-items-center rounded-xl bg-gold-soft text-gold"><UserPlus className="h-5 w-5" /></div>
+          <div>
+            <p className="font-display text-lg text-gold">Recruiter team</p>
+            <p className="text-xs text-muted-foreground">Invite teammates so they can see the same jobs, applicants, and interview replays as you.</p>
+          </div>
+        </div>
+        <Badge variant="outline" className="rounded-full border-gold/40 text-gold capitalize">{teamData?.role ?? "member"}</Badge>
+      </div>
+
+      {isOwner && (
+        <div className="flex flex-wrap items-end gap-2">
+          <div className="flex-1 min-w-[200px]">
+            <Label>Team name</Label>
+            <Input value={newName} onChange={(e) => setNewName(e.target.value)} className="mt-1" placeholder="e.g. Acme Talent" />
+          </div>
+          <Button onClick={doRename} variant="outline" className="rounded-full border-gold/40 text-gold">Rename</Button>
+        </div>
+      )}
+
+      {isOwner && (
+        <div className="rounded-xl border border-gold/20 bg-gold-soft/30 p-4">
+          <Label className="text-gold flex items-center gap-1"><Mail className="h-3 w-3" /> Invite a teammate by email</Label>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <Input type="email" placeholder="teammate@company.com" value={email} onChange={(e) => setEmail(e.target.value)} className="flex-1 min-w-[200px]" />
+            <Button onClick={doInvite} disabled={busy || !email.trim()} className="rounded-full bg-gold text-background hover:bg-gold/90">
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create invite link"}
+            </Button>
+          </div>
+          <p className="mt-2 text-[11px] text-muted-foreground">A single-use link is generated and copied to your clipboard. Invites expire after 14 days.</p>
+        </div>
+      )}
+
+      <div>
+        <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Members ({teamData?.members.length ?? 0})</p>
+        <div className="overflow-hidden rounded-xl border border-border/30">
+          <table className="w-full text-sm">
+            <thead className="bg-card/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
+              <tr><th className="px-4 py-3">Name</th><th className="px-4 py-3">Email</th><th className="px-4 py-3">Role</th><th className="px-4 py-3"></th></tr>
+            </thead>
+            <tbody>
+              {(teamData?.members ?? []).map(m => {
+                const p = (teamData?.profiles ?? []).find(x => x.id === m.user_id);
+                return (
+                  <tr key={m.user_id} className="border-t border-border/20">
+                    <td className="px-4 py-3 flex items-center gap-2">{m.role === "owner" && <Crown className="h-3.5 w-3.5 text-gold" />}{p?.full_name ?? "—"}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{p?.email ?? "—"}</td>
+                    <td className="px-4 py-3"><Badge variant="outline" className={`rounded-full text-[10px] capitalize ${m.role === "owner" ? "border-gold text-gold" : ""}`}>{m.role}</Badge></td>
+                    <td className="px-4 py-3 text-right">
+                      {isOwner && m.role !== "owner" && (
+                        <Button size="sm" variant="ghost" onClick={() => doRemove(m.user_id)} className="text-xs text-muted-foreground hover:text-rose-500"><Trash2 className="h-3.5 w-3.5" /></Button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {!!teamData?.invites?.filter(i => !i.accepted_at).length && (
+        <div>
+          <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Pending invites</p>
+          <div className="space-y-2">
+            {teamData!.invites.filter(i => !i.accepted_at).map(i => (
+              <div key={i.id} className="flex items-center gap-3 rounded-xl border border-border/30 bg-card/30 px-4 py-2 text-sm">
+                <Mail className="h-4 w-4 text-muted-foreground" />
+                <span className="flex-1">{i.email}</span>
+                <span className="text-[11px] text-muted-foreground">expires {new Date(i.expires_at).toLocaleDateString()}</span>
+                <Button size="sm" variant="ghost" onClick={() => copyLink(i.token)} className="text-xs"><Copy className="mr-1 h-3 w-3" /> Copy link</Button>
+                {isOwner && <Button size="sm" variant="ghost" onClick={() => doRevoke(i.id)} className="text-xs text-rose-500/80 hover:text-rose-500"><Trash2 className="h-3.5 w-3.5" /></Button>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
