@@ -428,29 +428,47 @@ export const generateLearningRoadmap = createServerFn({ method: "POST" })
     const { data: item } = await supabase.from("learning_items").select("*").eq("id", data.itemId).eq("candidate_id", userId).single();
     if (!item) throw new Error("Item not found");
 
-    const { output } = await generateText({
-      model: gateway(),
-      output: Output.object({
-        schema: z.object({
-          skill: z.string(),
-          overview: z.string(),
-          estimated_weeks: z.number().min(1).max(52),
-          prerequisites: z.array(z.string()),
-          phases: z.array(z.object({
-            week_range: z.string(),
-            title: z.string(),
-            goals: z.array(z.string()),
-            topics: z.array(z.string()),
-            project: z.string(),
-            resources: z.array(z.object({ name: z.string(), type: z.enum(["course","docs","book","video","article","practice"]), url: z.string().optional() })),
-          })),
-          milestones: z.array(z.string()),
-          final_capstone: z.string(),
-        }),
-      }),
-      prompt: `Build a detailed week-by-week learning roadmap for a student to master "${item.skill}" from scratch to job-ready. Include 3-5 phases, hands-on projects per phase, concrete resources (courses, docs, videos, practice platforms), and a final capstone. Be specific (mention real platforms: freeCodeCamp, MDN, LeetCode, official docs, Coursera, YouTube channels, etc.).`,
+    const key = process.env.LOVABLE_API_KEY;
+    if (!key) throw new Error("Missing LOVABLE_API_KEY");
+
+    const RoadmapSchema = z.object({
+      skill: z.string(),
+      overview: z.string(),
+      estimated_weeks: z.number(),
+      prerequisites: z.array(z.string()),
+      phases: z.array(z.object({
+        week_range: z.string(),
+        title: z.string(),
+        goals: z.array(z.string()),
+        topics: z.array(z.string()),
+        project: z.string(),
+        resources: z.array(z.object({ name: z.string(), type: z.string(), url: z.string().optional() })),
+      })),
+      milestones: z.array(z.string()),
+      final_capstone: z.string(),
     });
+
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
+      body: JSON.stringify({
+        model: MODEL,
+        messages: [{
+          role: "user",
+          content: `Build a detailed week-by-week learning roadmap for a student to master "${item.skill}" from scratch to job-ready. Include 3-5 phases, hands-on projects per phase, concrete resources (real platforms: freeCodeCamp, MDN, LeetCode, official docs, Coursera, YouTube channels, etc.), milestones, and a final capstone. Resource "type" must be one of: course, docs, book, video, article, practice. Return ONLY a JSON object with this shape:\n{\n  "skill": string,\n  "overview": string,\n  "estimated_weeks": number,\n  "prerequisites": [string],\n  "phases": [{ "week_range": string, "title": string, "goals": [string], "topics": [string], "project": string, "resources": [{ "name": string, "type": string, "url": string }] }],\n  "milestones": [string],\n  "final_capstone": string\n}`,
+        }],
+      }),
+    });
+    if (!res.ok) throw new Error(`Roadmap failed [${res.status}]`);
+    const json = await res.json();
+    const raw = json.choices?.[0]?.message?.content ?? "{}";
+    const cleaned = raw.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
+    const start = cleaned.search(/[\{]/);
+    const end = cleaned.lastIndexOf("}");
+    if (start === -1 || end === -1) throw new Error("AI did not return JSON");
+    const output = RoadmapSchema.parse(JSON.parse(cleaned.slice(start, end + 1)));
 
     await supabase.from("learning_items").update({ roadmap: output as any }).eq("id", data.itemId);
     return output;
+  });
   });
