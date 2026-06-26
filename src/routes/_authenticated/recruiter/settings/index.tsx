@@ -97,7 +97,6 @@ function SettingsPage() {
     <RecruiterShell
       eyebrow="Workspace"
       title={<span>Recruiter <span className="text-gold">Command Settings</span></span>}
-      description="Manage your hiring workspace, team permissions, and AI defaults."
     >
       <div className="flex flex-wrap gap-2">
         {tabs.map(t => {
