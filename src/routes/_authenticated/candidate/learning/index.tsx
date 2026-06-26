@@ -94,39 +94,86 @@ function Learning() {
 
   return (
     <CandidateShell eyebrow="Skills to grow" title="Learning Roadmap">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <p className="text-sm text-muted-foreground">
+          Tasks seeded from interview gaps and resume analysis. Add your own anytime.
+        </p>
+        <Button size="sm" className="rounded-full" onClick={() => setAddOpen(true)}>
+          <Plus className="mr-1.5 h-4 w-4" /> New task
+        </Button>
+      </div>
+
       {!items?.length ? (
         <div className="glass rounded-2xl p-12 text-center text-muted-foreground">
           <GraduationCap className="mx-auto h-8 w-8 text-primary/60" />
-          <p className="mt-4">No items yet. Finish a mock interview or run a role-targeted resume analysis to seed skills.</p>
+          <p className="mt-4">No items yet. Finish a mock interview, run a role-targeted resume analysis, or add a custom task above.</p>
         </div>
       ) : (
         <div className="grid gap-6 lg:grid-cols-3">
-          {(["in_progress","todo","done"] as const).map(col => (
+          {(["todo","in_progress","done"] as const).map(col => (
             <div key={col} className="glass rounded-2xl p-6">
-              <p className="text-xs uppercase tracking-wider text-muted-foreground capitalize">{col.replace("_"," ")}</p>
+              <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                {col === "todo" ? "To do" : col === "in_progress" ? "In progress" : "Done"}
+              </p>
               <p className="mt-1 font-display text-3xl">{grouped[col].length}</p>
               <ul className="mt-4 space-y-2">
                 {grouped[col].map(i => (
                   <li key={i.id} className="rounded-xl border border-border/60 p-3">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-2">
                       <span className="text-sm font-medium">{i.skill}</span>
                       <div className="flex gap-1">
-                        <Button size="icon" variant="ghost" onClick={() => setStatus(i.id, "todo")} className={i.status === "todo" ? "text-primary" : "text-muted-foreground"}><Circle className="h-4 w-4" /></Button>
-                        <Button size="icon" variant="ghost" onClick={() => setStatus(i.id, "in_progress")} className={i.status === "in_progress" ? "text-primary" : "text-muted-foreground"}><Loader className="h-4 w-4" /></Button>
-                        <Button size="icon" variant="ghost" onClick={() => setStatus(i.id, "done")} className={i.status === "done" ? "text-success" : "text-muted-foreground"}><CheckCircle2 className="h-4 w-4" /></Button>
+                        <Button size="icon" variant="ghost" title="To do" onClick={() => setStatus(i.id, "todo")} className={i.status === "todo" ? "text-primary" : "text-muted-foreground"}><Circle className="h-4 w-4" /></Button>
+                        <Button size="icon" variant="ghost" title="In progress" onClick={() => setStatus(i.id, "in_progress")} className={i.status === "in_progress" ? "text-primary" : "text-muted-foreground"}><Loader className="h-4 w-4" /></Button>
+                        <Button size="icon" variant="ghost" title="Done" onClick={() => setStatus(i.id, "done")} className={i.status === "done" ? "text-success" : "text-muted-foreground"}><CheckCircle2 className="h-4 w-4" /></Button>
+                        <Button size="icon" variant="ghost" title="Delete" onClick={() => removeItem(i.id)} className="text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></Button>
                       </div>
                     </div>
+                    {i.source_session_id && (
+                      <p className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">From interview gap</p>
+                    )}
                     <Button size="sm" variant="outline" className="mt-2 w-full rounded-full" onClick={() => openRoadmap(i)} disabled={busyId === i.id}>
                       {busyId === i.id ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Map className="mr-2 h-3.5 w-3.5" />}
                       {i.roadmap ? "View roadmap" : "Generate roadmap"}
                     </Button>
                   </li>
                 ))}
+                {grouped[col].length === 0 && (
+                  <li className="rounded-xl border border-dashed border-border/40 p-4 text-center text-xs text-muted-foreground">
+                    Nothing here yet
+                  </li>
+                )}
               </ul>
             </div>
           ))}
         </div>
       )}
+
+      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display text-xl">Add a learning task</DialogTitle>
+            <DialogDescription>Track any skill you want to grow. Generate an AI roadmap after.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 pt-2">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">Skill or topic</label>
+              <Input value={newSkill} onChange={e => setNewSkill(e.target.value)} placeholder="e.g. System design fundamentals" />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">Reference link (optional)</label>
+              <Input value={newUrl} onChange={e => setNewUrl(e.target.value)} placeholder="https://…" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setAddOpen(false)}>Cancel</Button>
+            <Button onClick={addCustom} disabled={adding || !newSkill.trim()}>
+              {adding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
+              Add task
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
       <Dialog open={!!openItem} onOpenChange={(o) => !o && setOpenItem(null)}>
         <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
