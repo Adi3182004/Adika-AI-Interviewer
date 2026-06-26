@@ -471,4 +471,3 @@ export const generateLearningRoadmap = createServerFn({ method: "POST" })
     await supabase.from("learning_items").update({ roadmap: output as any }).eq("id", data.itemId);
     return output;
   });
-  });
