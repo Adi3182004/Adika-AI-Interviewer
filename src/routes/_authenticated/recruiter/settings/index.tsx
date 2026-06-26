@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Save, Shield, Users, Building2, Sparkles, Crown, UserCog } from "lucide-react";
+import { Loader2, Save, Shield, Users, Building2, Sparkles, Crown, UserCog, Mail, Copy, Trash2, UserPlus } from "lucide-react";
 import { RecruiterShell } from "@/components/RecruiterShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { ensureMyTeam, inviteTeammate, revokeInvite, removeTeammate, renameMyTeam } from "@/lib/teams.functions";
 
 export const Route = createFileRoute("/_authenticated/recruiter/settings/")({
   head: () => ({ meta: [{ title: "Settings — Recruiter" }] }),
@@ -23,7 +25,7 @@ type ProfileRow = { id: string; email: string | null; full_name: string | null; 
 
 function SettingsPage() {
   const qc = useQueryClient();
-  const [tab, setTab] = useState<"workspace" | "team" | "preferences">("workspace");
+  const [tab, setTab] = useState<"workspace" | "team" | "invites" | "preferences">("workspace");
 
   const { data } = useQuery({
     queryKey: ["recruiter-profile"],
