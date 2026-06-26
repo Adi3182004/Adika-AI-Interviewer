@@ -201,8 +201,25 @@ function ResumeEditor() {
         <aside className="space-y-4">
           <div className="glass rounded-2xl p-6">
             <p className="text-xs uppercase tracking-wider text-muted-foreground">ATS Score</p>
-            <p className="mt-2 font-display text-5xl">{resume?.ats_score ?? "—"}</p>
-            <p className="mt-1 text-xs text-muted-foreground">Run analysis to refresh.</p>
+            {typeof resume?.ats_score === "number" ? (
+              <>
+                <p className="mt-2 font-display text-5xl text-primary">
+                  {resume.ats_score}
+                  <span className="ml-1 text-xl text-muted-foreground">/100</span>
+                </p>
+                <div className="mt-3 h-2 rounded-full bg-secondary">
+                  <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${resume.ats_score}%` }} />
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {resume.ats_score >= 80 ? "Strong — recruiter-ready." : resume.ats_score >= 60 ? "Solid baseline — apply the tips below." : "Needs work — follow the section tips."}
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="mt-2 font-display text-5xl text-muted-foreground">—</p>
+                <p className="mt-1 text-xs text-muted-foreground">Click ATS Analysis to score this resume.</p>
+              </>
+            )}
           </div>
           {resume?.ats_feedback ? (
             <div className="glass rounded-2xl p-6">
