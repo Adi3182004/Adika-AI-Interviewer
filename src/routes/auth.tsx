@@ -39,6 +39,15 @@ function AuthPage() {
 
   useEffect(() => { setRole(initialRole); setMode(initialMode); }, [initialRole, initialMode]);
 
+  // Idempotently provision demo accounts on first visit so "Use demo" always works.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (sessionStorage.getItem("adika_demo_seeded") === "1") return;
+    ensureDemoAccounts({ data: undefined as never })
+      .then(() => sessionStorage.setItem("adika_demo_seeded", "1"))
+      .catch(() => {});
+  }, []);
+
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
       if (!data.session) return;
