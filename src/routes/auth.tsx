@@ -43,7 +43,7 @@ function AuthPage() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (sessionStorage.getItem("adika_demo_seeded") === "1") return;
-    ensureDemoAccounts({ data: undefined as never })
+    ensureDemoAccounts()
       .then(() => sessionStorage.setItem("adika_demo_seeded", "1"))
       .catch(() => {});
   }, []);
