@@ -22,6 +22,7 @@ const search = z.object({
 
 export const Route = createFileRoute("/auth")({
   validateSearch: search,
+  ssr: false,
   head: () => ({ meta: [{ title: "Sign in — Adika AI" }] }),
   component: AuthPage,
 });
