@@ -18,31 +18,51 @@ export const analyzeResume = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ resumeId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const key = process.env.LOVABLE_API_KEY;
+    if (!key) throw new Error("Missing LOVABLE_API_KEY");
     const { data: resume, error } = await supabase
       .from("resumes").select("*").eq("id", data.resumeId).eq("user_id", userId).single();
     if (error || !resume) throw new Error("Resume not found");
 
-    const { output } = await generateText({
-      model: gateway(),
-      output: Output.object({
-        schema: z.object({
-          ats_score: z.number().min(0).max(100),
-          parsed_skills: z.array(z.string()),
-          feedback: z.object({
-            summary: z.string(),
-            sections: z.array(z.object({
-              name: z.string(),
-              score: z.number().min(0).max(100),
-              tip: z.string(),
-            })),
-          }),
-        }),
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
+      body: JSON.stringify({
+        model: MODEL,
+        messages: [{
+          role: "user",
+          content: `You are an ATS auditor. Score this resume (0-100), extract skills (lowercase, deduped), and give per-section feedback for Summary, Experience, Education, Skills, Projects. Return JSON only.\n\nRESUME:\n${JSON.stringify(resume.content)}`,
+        }],
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "ats", strict: true,
+            schema: {
+              type: "object", additionalProperties: false,
+              required: ["ats_score", "parsed_skills", "feedback"],
+              properties: {
+                ats_score: { type: "number" },
+                parsed_skills: { type: "array", items: { type: "string" } },
+                feedback: {
+                  type: "object", additionalProperties: false,
+                  required: ["summary", "sections"],
+                  properties: {
+                    summary: { type: "string" },
+                    sections: { type: "array", items: { type: "object", additionalProperties: false, required: ["name","score","tip"], properties: { name: { type: "string" }, score: { type: "number" }, tip: { type: "string" } } } },
+                  },
+                },
+              },
+            },
+          },
+        },
       }),
-      prompt: `You are an ATS auditor. Analyze this resume JSON and return an ATS score (0-100), extracted skills (lowercase, deduped), and per-section feedback.\n\nRESUME:\n${JSON.stringify(resume.content)}`,
     });
+    if (!res.ok) throw new Error(`ATS analysis failed [${res.status}]`);
+    const json = await res.json();
+    const output = JSON.parse(json.choices?.[0]?.message?.content ?? "{}");
 
     await supabase.from("resumes").update({
-      ats_score: output.ats_score,
+      ats_score: Math.round(Number(output.ats_score) || 0),
       parsed_skills: output.parsed_skills,
       ats_feedback: output.feedback,
     }).eq("id", data.resumeId);
