@@ -98,14 +98,18 @@ export const ensureDemoAccounts = createServerFn({ method: "POST" }).handler(asy
         await supabaseAdmin.from("resumes").insert({
           user_id: userId,
           title: "Aarav Sharma — Software Engineer",
-          summary:
-            "Final-year CSE student at IIT Bombay with internships at Razorpay and Zomato. Built distributed systems serving 2M+ users. Open-source contributor to Next.js and tRPC.",
-          skills: ["TypeScript", "React", "Node.js", "PostgreSQL", "AWS", "Python", "Docker", "Kubernetes", "Redis", "GraphQL"],
-          experience: [
-            { company: "Razorpay", role: "SWE Intern", duration: "May 2025 – Aug 2025", bullets: ["Cut payment webhook latency 42% via Redis stream batching.", "Shipped idempotency layer handling 8M events/day."] },
-            { company: "Zomato", role: "Backend Intern", duration: "Dec 2024 – Feb 2025", bullets: ["Rewrote search ranking in Go, +11% CTR.", "Owned migration of 4 services to Kubernetes."] },
-          ],
-          education: [{ school: "IIT Bombay", degree: "B.Tech, Computer Science", year: "2022 – 2026", gpa: "9.1/10" }],
+          is_primary: true,
+          parsed_skills: ["TypeScript", "React", "Node.js", "PostgreSQL", "AWS", "Python", "Docker", "Kubernetes", "Redis", "GraphQL"],
+          content: {
+            summary:
+              "Final-year CSE student at IIT Bombay with internships at Razorpay and Zomato. Built distributed systems serving 2M+ users. Open-source contributor to Next.js and tRPC.",
+            skills: ["TypeScript", "React", "Node.js", "PostgreSQL", "AWS", "Python", "Docker", "Kubernetes", "Redis", "GraphQL"],
+            experience: [
+              { company: "Razorpay", role: "SWE Intern", duration: "May 2025 – Aug 2025", bullets: ["Cut payment webhook latency 42% via Redis stream batching.", "Shipped idempotency layer handling 8M events/day."] },
+              { company: "Zomato", role: "Backend Intern", duration: "Dec 2024 – Feb 2025", bullets: ["Rewrote search ranking in Go, +11% CTR.", "Owned migration of 4 services to Kubernetes."] },
+            ],
+            education: [{ school: "IIT Bombay", degree: "B.Tech, Computer Science", year: "2022 – 2026", gpa: "9.1/10" }],
+          },
           ats_score: 78,
           role_target: "Software Engineer",
           targeted_feedback: {
