@@ -3,13 +3,14 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Bot, Loader2, Send } from "lucide-react";
+import { ArrowLeft, Bot, Loader2, Send, PartyPopper, Download, LayoutDashboard } from "lucide-react";
 import { CandidateShell } from "@/components/CandidateShell";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { interviewTurn } from "@/lib/ai.functions";
+import { exportInterviewReport } from "@/lib/interview-export";
 
 export const Route = createFileRoute("/_authenticated/candidate/interviews/$id")({
   head: () => ({ meta: [{ title: "Interview Session" }] }),
