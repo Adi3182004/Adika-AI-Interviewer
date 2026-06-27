@@ -12,6 +12,27 @@ function gateway() {
   return createLovableAiGatewayProvider(key)(MODEL);
 }
 
+async function jsonCall<T = any>(prompt: string, fallback: T): Promise<T> {
+  const key = process.env.LOVABLE_API_KEY;
+  if (!key) throw new Error("Missing LOVABLE_API_KEY");
+  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
+    body: JSON.stringify({
+      model: MODEL,
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
+    }),
+  });
+  if (!res.ok) throw new Error(`AI call failed [${res.status}]`);
+  const json = await res.json();
+  let txt: string = json.choices?.[0]?.message?.content ?? "";
+  txt = txt.trim().replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+  const m = txt.match(/\{[\s\S]*\}/);
+  try { return JSON.parse(m ? m[0] : txt) as T; } catch { return fallback; }
+}
+
+
 // ------------- RESUME ANALYSIS -------------
 export const analyzeResume = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
