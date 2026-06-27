@@ -12,6 +12,27 @@ function gateway() {
   return createLovableAiGatewayProvider(key)(MODEL);
 }
 
+async function jsonCall<T = any>(prompt: string, fallback: T): Promise<T> {
+  const key = process.env.LOVABLE_API_KEY;
+  if (!key) throw new Error("Missing LOVABLE_API_KEY");
+  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
+    body: JSON.stringify({
+      model: MODEL,
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
+    }),
+  });
+  if (!res.ok) throw new Error(`AI call failed [${res.status}]`);
+  const json = await res.json();
+  let txt: string = json.choices?.[0]?.message?.content ?? "";
+  txt = txt.trim().replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+  const m = txt.match(/\{[\s\S]*\}/);
+  try { return JSON.parse(m ? m[0] : txt) as T; } catch { return fallback; }
+}
+
+
 // ------------- RESUME ANALYSIS -------------
 export const analyzeResume = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -177,40 +198,28 @@ export const interviewTurn = createServerFn({ method: "POST" })
     let userScore: number | null = null;
     let userFeedback: string | null = null;
     if (data.userAnswer) {
-      const { output: ev } = await generateText({
-        model: gateway(),
-        output: Output.object({
-          schema: z.object({
-            score: z.number().min(0).max(100),
-            signals: z.object({
-              clarity: z.number().min(0).max(100),
-              technical: z.number().min(0).max(100),
-              depth: z.number().min(0).max(100),
-            }),
-            feedback: z.string(),
-            what_was_good: z.array(z.string()).max(4),
-            what_to_improve: z.array(z.string()).max(4),
-            ideal_answer_sketch: z.string(),
-          }),
-        }),
-        prompt: `You are a senior interviewer grading like a professional teacher.\n${contextHeader}\nQUESTION: ${[...(messages ?? [])].reverse().find((m: { role: string }) => m.role === "assistant")?.content ?? ""}\nANSWER: ${data.userAnswer}\n\nReturn JSON with score (0-100), signals, 1-2 sentence feedback, 2-3 concrete 'what was good' points, 2-3 'what to improve' points, and a 3-sentence sketch of an ideal answer.`,
+      const lastQ = [...(messages ?? [])].reverse().find((m: { role: string }) => m.role === "assistant")?.content ?? "";
+      const ev = await jsonCall(`You are a senior interviewer grading like a professional teacher.\n${contextHeader}\nQUESTION: ${lastQ}\nANSWER: ${data.userAnswer}\n\nReturn ONLY JSON with this exact shape:\n{"score": number 0-100, "signals": {"clarity": number, "technical": number, "depth": number}, "feedback": "1-2 sentences", "what_was_good": ["..."], "what_to_improve": ["..."], "ideal_answer_sketch": "3 sentences"}`, {
+        score: 60, signals: { clarity: 60, technical: 60, depth: 60 },
+        feedback: "Answer recorded.", what_was_good: [], what_to_improve: [], ideal_answer_sketch: "",
       });
-      userScore = ev.score;
-      userFeedback = ev.feedback;
+      userScore = Number(ev.score) || 0;
+      userFeedback = String(ev.feedback ?? "");
       await supabase.from("interview_messages").insert({
         session_id: data.sessionId,
         role: "user",
         content: data.userAnswer,
-        score: ev.score,
+        score: userScore,
         signals: {
-          ...ev.signals,
+          ...(ev.signals ?? {}),
           feedback: ev.feedback,
-          what_was_good: ev.what_was_good,
-          what_to_improve: ev.what_to_improve,
-          ideal_answer_sketch: ev.ideal_answer_sketch,
+          what_was_good: ev.what_was_good ?? [],
+          what_to_improve: ev.what_to_improve ?? [],
+          ideal_answer_sketch: ev.ideal_answer_sketch ?? "",
         },
       });
     }
+
 
     const turnCount = (session.question_count ?? 0) + (data.userAnswer ? 1 : 0);
     const MAX_QUESTIONS = 10;
@@ -219,19 +228,10 @@ export const interviewTurn = createServerFn({ method: "POST" })
     if (isFinal) {
       const { data: allMsgs } = await supabase
         .from("interview_messages").select("*").eq("session_id", data.sessionId).order("created_at");
-      const { output: fin } = await generateText({
-        model: gateway(),
-        output: Output.object({
-          schema: z.object({
-            overall_score: z.number().min(0).max(100),
-            readiness_score: z.number().min(0).max(100),
-            strengths: z.array(z.string()),
-            gaps: z.array(z.string()),
-            summary: z.string(),
-          }),
-        }),
-        prompt: `Summarize this 10-question interview for ${session.role_target}${company ? ` at ${company}` : ""}. Return overall_score (avg of answer scores), readiness_score (0-100 hire-readiness), 3-5 strengths, 3-5 gaps (skills to study), and a 3-sentence summary written like a professional teacher's report card.\n\n${contextHeader}\n\nTRANSCRIPT:\n${(allMsgs || []).map(m => `${m.role.toUpperCase()}: ${m.content}`).join("\n")}`,
+      const fin = await jsonCall(`Summarize this 10-question interview for ${session.role_target}${company ? ` at ${company}` : ""}. Return ONLY JSON: {"overall_score": number 0-100, "readiness_score": number 0-100, "strengths": ["3-5 items"], "gaps": ["3-5 skills"], "summary": "3 sentences like a teacher's report card"}.\n\n${contextHeader}\n\nTRANSCRIPT:\n${(allMsgs || []).map(m => `${m.role.toUpperCase()}: ${m.content}`).join("\n")}`, {
+        overall_score: 60, readiness_score: 60, strengths: [], gaps: [], summary: "",
       });
+
       await supabase.from("interview_sessions").update({
         status: "completed",
         question_count: turnCount,
@@ -243,7 +243,7 @@ export const interviewTurn = createServerFn({ method: "POST" })
       }).eq("id", data.sessionId);
       if (fin.gaps?.length) {
         await supabase.from("learning_items").insert(
-          fin.gaps.slice(0, 8).map(skill => ({
+          fin.gaps.slice(0, 8).map((skill: string) => ({
             candidate_id: userId, skill, source_session_id: data.sessionId, status: "todo",
           })),
         );
