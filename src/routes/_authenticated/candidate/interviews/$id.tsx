@@ -46,7 +46,7 @@ function InterviewSession() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.id, hasFirstQuestion]);
 
-  useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }); }, [messages?.length]);
+  
 
   async function send(isFirst = false) {
     if (!isFirst && !answer.trim()) return;
