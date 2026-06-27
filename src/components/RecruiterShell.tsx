@@ -73,6 +73,7 @@ export function RecruiterShell({ children, title, eyebrow }: { children: ReactNo
               </Sheet>
               {eyebrow && <p className="text-xs uppercase tracking-[0.3em] text-gold">{eyebrow}</p>}
             </div>
+            <NotificationBell tone="gold" />
           </header>
           <main className="flex-1 px-4 py-8 md:px-10 md:py-12">
             {title && <h1 className="mb-8 font-display text-4xl md:text-5xl">{title}</h1>}
