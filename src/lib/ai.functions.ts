@@ -194,11 +194,22 @@ export const interviewTurn = createServerFn({ method: "POST" })
       jd ? `JOB DESCRIPTION:\n${jd.slice(0, 2000)}` : "",
     ].filter(Boolean).join("\n");
 
-    // Save user message + score it
+    const MAX_QUESTIONS = 10;
+    const msgs = messages ?? [];
+    const assistantCount = msgs.filter((m: any) => m.role === "assistant").length;
+    const answeredCount = msgs.filter((m: any) => m.role === "user").length;
+
+    // Guard: if already completed or maxed out, do nothing further
+    if (session.status === "completed") {
+      return { done: true, userScore: null, userFeedback: null };
+    }
+
+    // Save user message + score it (only if there's a pending question waiting for an answer)
     let userScore: number | null = null;
     let userFeedback: string | null = null;
-    if (data.userAnswer) {
-      const lastQ = [...(messages ?? [])].reverse().find((m: { role: string }) => m.role === "assistant")?.content ?? "";
+    const hasPendingQuestion = assistantCount > answeredCount;
+    if (data.userAnswer && hasPendingQuestion) {
+      const lastQ = [...msgs].reverse().find((m: { role: string }) => m.role === "assistant")?.content ?? "";
       const ev = await jsonCall(`You are a senior interviewer grading like a professional teacher.\n${contextHeader}\nQUESTION: ${lastQ}\nANSWER: ${data.userAnswer}\n\nReturn ONLY JSON with this exact shape:\n{"score": number 0-100, "signals": {"clarity": number, "technical": number, "depth": number}, "feedback": "1-2 sentences", "what_was_good": ["..."], "what_to_improve": ["..."], "ideal_answer_sketch": "3 sentences"}`, {
         score: 60, signals: { clarity: 60, technical: 60, depth: 60 },
         feedback: "Answer recorded.", what_was_good: [], what_to_improve: [], ideal_answer_sketch: "",
@@ -220,10 +231,8 @@ export const interviewTurn = createServerFn({ method: "POST" })
       });
     }
 
-
-    const turnCount = (session.question_count ?? 0) + (data.userAnswer ? 1 : 0);
-    const MAX_QUESTIONS = 10;
-    const isFinal = turnCount >= MAX_QUESTIONS;
+    const answeredAfter = answeredCount + ((data.userAnswer && hasPendingQuestion) ? 1 : 0);
+    const isFinal = answeredAfter >= MAX_QUESTIONS;
 
     if (isFinal) {
       const { data: allMsgs } = await supabase
@@ -234,7 +243,7 @@ export const interviewTurn = createServerFn({ method: "POST" })
 
       await supabase.from("interview_sessions").update({
         status: "completed",
-        question_count: turnCount,
+        question_count: MAX_QUESTIONS,
         overall_score: fin.overall_score,
         readiness_score: fin.readiness_score,
         strengths: fin.strengths,
@@ -251,17 +260,23 @@ export const interviewTurn = createServerFn({ method: "POST" })
       return { done: true, final: fin, userScore, userFeedback };
     }
 
+    // Don't generate another question if one is already pending unanswered, or we've hit the cap
+    if (assistantCount >= MAX_QUESTIONS || hasPendingQuestion) {
+      await supabase.from("interview_sessions").update({ question_count: Math.min(assistantCount, MAX_QUESTIONS) }).eq("id", data.sessionId);
+      return { done: false, userScore, userFeedback };
+    }
+
     // Generate next question — adaptive, company/role/experience tuned
-    const transcript = (messages || []).map(m => `${m.role.toUpperCase()}: ${m.content}`).join("\n");
-    const qNumber = turnCount + 1;
+    const transcript = msgs.map(m => `${m.role.toUpperCase()}: ${m.content}`).join("\n");
+    const qNumber = assistantCount + 1;
     const { text: nextQ } = await generateText({
       model: gateway(),
-      prompt: `You are conducting a real interview for the EXACT role "${session.role_target}"${company ? ` at ${company}` : ""}. This is question ${qNumber} of 10.\n${contextHeader}\n\nSTRICT RULES:\n- The question MUST be directly relevant to the day-to-day work, tools, concepts, and responsibilities of a "${session.role_target}". Do NOT ask questions from unrelated domains (e.g. do not ask UI/UX questions for a Data Analyst, do not ask data science questions for a Frontend Developer, do not ask backend questions for a Designer).\n- Use terminology, tools, and scenarios that a real "${session.role_target}" would face on the job. Examples: Data Analyst → SQL, Excel, dashboards, A/B tests, statistics, business metrics. Frontend → React/CSS/perf/accessibility. Backend → APIs, DBs, scaling. PM → prioritization, roadmaps, metrics.\n- ${company ? `Bias the framing / domain examples to ${company}'s actual products and known interview style.` : "Use realistic industry scenarios."}\n- Mix question types across the 10 (fundamentals, applied/case, scenario, behavioral) — but every single one must be ROLE-relevant.\n- Adapt difficulty to the candidate's prior answers.\n- Output ONLY the question text. No preamble, no numbering, no "Question ${qNumber}:" prefix.\n\nTRANSCRIPT SO FAR:\n${transcript || "(none yet — this is the opening question)"}${data.userAnswer ? `\nUSER: ${data.userAnswer}` : ""}`,
+      prompt: `You are conducting a real interview for the EXACT role "${session.role_target}"${company ? ` at ${company}` : ""}. This is question ${qNumber} of 10.\n${contextHeader}\n\nSTRICT RULES:\n- The question MUST be directly relevant to the day-to-day work, tools, concepts, and responsibilities of a "${session.role_target}". Do NOT ask questions from unrelated domains.\n- Use terminology, tools, and scenarios that a real "${session.role_target}" would face on the job.\n- ${company ? `Bias the framing / domain examples to ${company}'s actual products and known interview style.` : "Use realistic industry scenarios."}\n- Mix question types across the 10 (fundamentals, applied/case, scenario, behavioral) — but every single one must be ROLE-relevant.\n- Adapt difficulty to the candidate's prior answers.\n- Output ONLY the question text. No preamble, no numbering, no "Question ${qNumber}:" prefix.\n\nTRANSCRIPT SO FAR:\n${transcript || "(none yet — this is the opening question)"}${data.userAnswer ? `\nUSER: ${data.userAnswer}` : ""}`,
     });
     await supabase.from("interview_messages").insert({
       session_id: data.sessionId, role: "assistant", content: nextQ.trim(),
     });
-    await supabase.from("interview_sessions").update({ question_count: turnCount }).eq("id", data.sessionId);
+    await supabase.from("interview_sessions").update({ question_count: qNumber }).eq("id", data.sessionId);
 
     return { done: false, question: nextQ.trim(), userScore, userFeedback };
   });
