@@ -74,11 +74,32 @@ function PipelineBoard() {
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <p className="truncate font-medium">{p?.full_name ?? "Candidate"}</p>
-            <p className="truncate text-[10px] text-muted-foreground">{p?.experience_level ?? p?.email ?? ""}</p>
+            <p className="truncate text-[10px] text-muted-foreground">Applied · {job?.title ?? "—"}</p>
+            <p className="truncate text-[10px] text-muted-foreground/80">{p?.experience_level ?? p?.email ?? ""}</p>
           </div>
-          <span className="shrink-0 rounded-full bg-gold-soft px-1.5 py-0.5 text-[10px] text-gold">{a.match_score ?? "—"}</span>
+          <div className="flex shrink-0 flex-col items-end gap-1">
+            <span className="rounded-full bg-gold-soft px-1.5 py-0.5 text-[10px] font-medium text-gold" title="Match score">
+              {a.match_score ?? "—"}%
+            </span>
+            {a.interview_score != null && (
+              <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[10px] text-emerald-400" title="Interview score">
+                <Sparkles className="h-2.5 w-2.5" /> {a.interview_score}
+              </span>
+            )}
+          </div>
         </div>
-        <div className="mt-3 flex items-center justify-between gap-1">
+
+        {a.resumes && (
+          <button
+            type="button"
+            onClick={() => setResumeOpen({ name: p?.full_name ?? "Candidate", resume: a.resumes })}
+            className="mt-2 inline-flex w-full items-center gap-1 rounded-md border border-border/40 bg-background/40 px-2 py-1 text-[10px] text-muted-foreground transition hover:border-gold/40 hover:text-gold"
+          >
+            <FileText className="h-3 w-3" /> View resume
+          </button>
+        )}
+
+        <div className="mt-2 flex items-center justify-between gap-1">
           {stage !== "rejected" && stage !== "hired" && stageDef?.next && (
             <Button size="sm" variant="ghost" className="h-6 flex-1 justify-start px-2 text-[10px] text-gold hover:bg-gold-soft" onClick={() => move(a.id, stageDef.next as Stage)}>
               Advance <ArrowRight className="ml-1 h-3 w-3" />
