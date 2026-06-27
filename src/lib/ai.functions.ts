@@ -207,19 +207,10 @@ export const interviewTurn = createServerFn({ method: "POST" })
     if (isFinal) {
       const { data: allMsgs } = await supabase
         .from("interview_messages").select("*").eq("session_id", data.sessionId).order("created_at");
-      const { output: fin } = await generateText({
-        model: gateway(),
-        output: Output.object({
-          schema: z.object({
-            overall_score: z.number().min(0).max(100),
-            readiness_score: z.number().min(0).max(100),
-            strengths: z.array(z.string()),
-            gaps: z.array(z.string()),
-            summary: z.string(),
-          }),
-        }),
-        prompt: `Summarize this 10-question interview for ${session.role_target}${company ? ` at ${company}` : ""}. Return overall_score (avg of answer scores), readiness_score (0-100 hire-readiness), 3-5 strengths, 3-5 gaps (skills to study), and a 3-sentence summary written like a professional teacher's report card.\n\n${contextHeader}\n\nTRANSCRIPT:\n${(allMsgs || []).map(m => `${m.role.toUpperCase()}: ${m.content}`).join("\n")}`,
+      const fin = await jsonCall(`Summarize this 10-question interview for ${session.role_target}${company ? ` at ${company}` : ""}. Return ONLY JSON: {"overall_score": number 0-100, "readiness_score": number 0-100, "strengths": ["3-5 items"], "gaps": ["3-5 skills"], "summary": "3 sentences like a teacher's report card"}.\n\n${contextHeader}\n\nTRANSCRIPT:\n${(allMsgs || []).map(m => `${m.role.toUpperCase()}: ${m.content}`).join("\n")}`, {
+        overall_score: 60, readiness_score: 60, strengths: [], gaps: [], summary: "",
       });
+
       await supabase.from("interview_sessions").update({
         status: "completed",
         question_count: turnCount,
