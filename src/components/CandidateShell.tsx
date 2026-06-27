@@ -77,6 +77,7 @@ export function CandidateShell({ children, title, eyebrow }: { children: ReactNo
               </Sheet>
               {eyebrow && <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">{eyebrow}</p>}
             </div>
+            <NotificationBell />
           </header>
           <main className="flex-1 px-4 py-8 md:px-10 md:py-12">
             {title && <h1 className="mb-8 font-display text-4xl md:text-5xl">{title}</h1>}
