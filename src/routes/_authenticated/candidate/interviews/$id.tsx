@@ -39,12 +39,12 @@ function InterviewSession() {
   const hasFirstQuestion = (messages ?? []).some(m => m.role === "assistant");
 
   useEffect(() => {
-    // Auto-kick the first question if not started yet
-    if (session && !hasFirstQuestion && !sending && !completed) {
+    // Auto-kick the first question only if no questions exist yet
+    if (session && messages && messages.length === 0 && !sending && !completed) {
       void send(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.id, hasFirstQuestion]);
+  }, [session?.id, messages?.length]);
 
   
 
@@ -66,7 +66,7 @@ function InterviewSession() {
   const currentQ = assistantQs[assistantQs.length - 1];
   const lastAnalyzed = [...userAs].reverse().find(m => m.score != null);
   const sig = (lastAnalyzed?.signals ?? {}) as any;
-  const qIndex = assistantQs.length;
+  const qIndex = Math.min(assistantQs.length, 10);
 
   return (
     <CandidateShell eyebrow={session?.role_target ?? "Session"}>
