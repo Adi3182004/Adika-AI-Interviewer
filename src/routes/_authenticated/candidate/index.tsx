@@ -1,10 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Sparkles, FileText, Briefcase, Bot, ArrowRight, CheckCircle2, Circle } from "lucide-react";
+import { Sparkles, FileText, Briefcase, Bot, ArrowRight, CheckCircle2, Circle, Download } from "lucide-react";
+import { toast } from "sonner";
 import { CandidateShell } from "@/components/CandidateShell";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
+import { exportInterviewReport } from "@/lib/interview-export";
 
 export const Route = createFileRoute("/_authenticated/candidate/")({
   head: () => ({ meta: [{ title: "Dashboard — Candidate" }] }),
@@ -114,14 +116,16 @@ function CandidateDashboard() {
       </div>
 
       {data?.sessions.length ? (
-        <div className="glass mt-8 rounded-2xl p-6">
+        <div id="interview-reports" className="glass mt-8 rounded-2xl p-6">
           <div className="flex items-center gap-3">
-            <Sparkles className="h-5 w-5 text-primary" /><p className="font-medium">Recent interview sessions</p>
+            <Sparkles className="h-5 w-5 text-primary" />
+            <p className="font-medium">Your interview reports</p>
           </div>
+          <p className="mt-1 text-xs text-muted-foreground">AI-generated reports from every completed session. Download the PDF for offline review.</p>
           <ul className="mt-4 divide-y divide-border/60">
             {data.sessions.map(s => (
-              <li key={s.id} className="flex items-center justify-between py-3 text-sm">
-                <div>
+              <li key={s.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm">
+                <div className="min-w-0">
                   <p className="font-medium">{s.role_target}</p>
                   <p className="text-xs text-muted-foreground">{new Date(s.created_at).toLocaleString()} · {s.status}</p>
                 </div>
@@ -129,6 +133,16 @@ function CandidateDashboard() {
                   <span className="text-muted-foreground text-xs">Score</span>
                   <span className="font-display text-xl">{s.overall_score ?? "—"}</span>
                   <Link to="/candidate/interviews/$id" params={{ id: s.id }}><Button size="sm" variant="ghost">View</Button></Link>
+                  {s.status === "completed" && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="rounded-full"
+                      onClick={() => exportInterviewReport(s.id).catch((e) => toast.error(e.message ?? "Failed"))}
+                    >
+                      <Download className="mr-1.5 h-3.5 w-3.5" /> Report
+                    </Button>
+                  )}
                 </div>
               </li>
             ))}
