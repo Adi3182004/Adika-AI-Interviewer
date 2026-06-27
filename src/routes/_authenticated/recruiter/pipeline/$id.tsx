@@ -30,6 +30,7 @@ export const Route = createFileRoute("/_authenticated/recruiter/pipeline/$id")({
 function PipelineBoard() {
   const { id } = Route.useParams();
   const qc = useQueryClient();
+  const [resumeOpen, setResumeOpen] = useState<null | { name: string; resume: any }>(null);
 
   const { data: job } = useQuery({
     queryKey: ["job", id],
@@ -41,10 +42,20 @@ function PipelineBoard() {
     queryFn: async () => {
       const { data } = await supabase
         .from("applications")
-        .select("*, profiles!applications_candidate_id_fkey(full_name,email,experience_level)")
+        .select("*, profiles!applications_candidate_id_fkey(full_name,email,experience_level), resumes(id,title,content,parsed_skills,ats_score)")
         .eq("job_id", id)
         .order("match_score", { ascending: false });
-      return data ?? [];
+      if (!data) return [];
+      // Pull interview scores for these candidates against this job
+      const candidateIds = data.map((a: any) => a.candidate_id);
+      const { data: sessions } = await supabase
+        .from("interview_sessions")
+        .select("candidate_id,overall_score,status")
+        .eq("job_id", id)
+        .in("candidate_id", candidateIds.length ? candidateIds : ["00000000-0000-0000-0000-000000000000"]);
+      const scoreBy = new Map<string, number>();
+      for (const s of sessions ?? []) if (s.overall_score != null) scoreBy.set(s.candidate_id, s.overall_score);
+      return data.map((a: any) => ({ ...a, interview_score: scoreBy.get(a.candidate_id) ?? null }));
     },
   });
 
