@@ -163,6 +163,63 @@ function PipelineBoard() {
       <div className="mt-6">
         <Column stageKey="rejected" label={REJECTED.label} />
       </div>
+
+      <Dialog open={!!resumeOpen} onOpenChange={(o) => !o && setResumeOpen(null)}>
+        <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{resumeOpen?.name} — Resume</DialogTitle>
+          </DialogHeader>
+          {resumeOpen?.resume && (
+            <div className="space-y-4 text-sm">
+              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                <span>ATS score: <span className="font-medium text-gold">{resumeOpen.resume.ats_score ?? "—"}</span></span>
+                <span>·</span>
+                <span>{(resumeOpen.resume.parsed_skills ?? []).length} skills</span>
+              </div>
+              {resumeOpen.resume.content?.summary && (
+                <section>
+                  <p className="mb-1 text-xs uppercase tracking-wider text-gold">Summary</p>
+                  <p className="text-muted-foreground">{resumeOpen.resume.content.summary}</p>
+                </section>
+              )}
+              {!!(resumeOpen.resume.parsed_skills ?? []).length && (
+                <section>
+                  <p className="mb-1 text-xs uppercase tracking-wider text-gold">Skills</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(resumeOpen.resume.parsed_skills as string[]).map((s) => (
+                      <Badge key={s} variant="outline" className="text-[10px]">{s}</Badge>
+                    ))}
+                  </div>
+                </section>
+              )}
+              {!!(resumeOpen.resume.content?.experience?.length) && (
+                <section>
+                  <p className="mb-1 text-xs uppercase tracking-wider text-gold">Experience</p>
+                  <div className="space-y-3">
+                    {resumeOpen.resume.content.experience.map((e: any, i: number) => (
+                      <div key={i} className="rounded-lg border border-border/50 p-3">
+                        <p className="font-medium">{e.role} · <span className="text-muted-foreground">{e.company}</span></p>
+                        <p className="text-[11px] text-muted-foreground">{e.duration}</p>
+                        <ul className="mt-1 list-disc pl-4 text-xs text-muted-foreground">
+                          {(e.bullets ?? []).map((b: string, j: number) => <li key={j}>{b}</li>)}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+              {!!(resumeOpen.resume.content?.education?.length) && (
+                <section>
+                  <p className="mb-1 text-xs uppercase tracking-wider text-gold">Education</p>
+                  {resumeOpen.resume.content.education.map((ed: any, i: number) => (
+                    <p key={i} className="text-xs text-muted-foreground">{ed.degree} — {ed.school} ({ed.year})</p>
+                  ))}
+                </section>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </RecruiterShell>
   );
 }
