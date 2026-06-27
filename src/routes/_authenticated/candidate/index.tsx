@@ -1,10 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Sparkles, FileText, Briefcase, Bot, ArrowRight, CheckCircle2, Circle } from "lucide-react";
+import { Sparkles, FileText, Briefcase, Bot, ArrowRight, CheckCircle2, Circle, Download } from "lucide-react";
+import { toast } from "sonner";
 import { CandidateShell } from "@/components/CandidateShell";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
+import { exportInterviewReport } from "@/lib/interview-export";
 
 export const Route = createFileRoute("/_authenticated/candidate/")({
   head: () => ({ meta: [{ title: "Dashboard — Candidate" }] }),
