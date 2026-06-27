@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { ArrowLeft, Filter, Search, Star, GitCompare, MessageSquare, Briefcase, LineChart as LineChartIcon, KanbanSquare, Play } from "lucide-react";
+import { ArrowLeft, Filter, Search, Star, GitCompare, MessageSquare, Briefcase, LineChart as LineChartIcon, KanbanSquare, Play, ArrowRight, ArrowLeft as ArrowLeftIcon, Check, X, UserCheck, Archive, RotateCcw, Trash2 } from "lucide-react";
 import { MeshBackground } from "@/components/MeshBackground";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,11 +39,42 @@ const candidates: Candidate[] = [
   { id: "c6", name: "Leo Martin", role: "DevOps Engineer", match: 73, skills: ["Terraform", "K8s", "Argo"], readiness: 70, location: "Toronto", ats: 80, comm: 70, tech: 75, problem: 72, experience: "4y · ex-Shopify", highlight: "Platform reliability. Cost optimization wins.", learning: 11, interviews: 3 },
 ];
 
-const pipelineStages = [
-  { key: "sourced", label: "Sourced", ids: ["c5", "c6"] },
-  { key: "screen", label: "AI Screen", ids: ["c3"] },
-  { key: "interview", label: "Interview", ids: ["c2", "c4"] },
-  { key: "offer", label: "Offer", ids: ["c1"] },
+// 18 candidates distributed across the pipeline stages
+type Stage = "applied" | "sourced" | "screen" | "interview" | "offer";
+const STAGES: { key: Stage; label: string }[] = [
+  { key: "applied", label: "Applied" },
+  { key: "sourced", label: "Sourced" },
+  { key: "screen", label: "AI Screen" },
+  { key: "interview", label: "Interview" },
+  { key: "offer", label: "Offer" },
+];
+
+type PipeCard = { id: string; name: string; role: string; match: number; stage: Stage };
+
+const INITIAL_PIPELINE: PipeCard[] = [
+  // Applied
+  { id: "p1", name: "Aarav Sharma", role: "Backend Engineer", match: 78, stage: "applied" },
+  { id: "p2", name: "Diya Patel", role: "Frontend Engineer", match: 72, stage: "applied" },
+  { id: "p3", name: "Kabir Singh", role: "Data Engineer", match: 81, stage: "applied" },
+  { id: "p4", name: "Ananya Iyer", role: "ML Engineer", match: 69, stage: "applied" },
+  // Sourced
+  { id: "p5", name: "Vihaan Mehta", role: "DevOps Engineer", match: 83, stage: "sourced" },
+  { id: "p6", name: "Ishaan Verma", role: "Backend Engineer", match: 76, stage: "sourced" },
+  { id: "p7", name: "Riya Kapoor", role: "Full Stack Engineer", match: 88, stage: "sourced" },
+  // AI Screen
+  { id: "p8", name: "Aditi Joshi", role: "ML Engineer", match: 85, stage: "screen" },
+  { id: "p9", name: "Rohan Gupta", role: "Senior AI Engineer", match: 91, stage: "screen" },
+  { id: "p10", name: "Saanvi Reddy", role: "Backend Engineer", match: 79, stage: "screen" },
+  { id: "p11", name: "Arjun Nair", role: "Frontend Engineer", match: 74, stage: "screen" },
+  // Interview
+  { id: "p12", name: "Meera Pillai", role: "Backend Engineer", match: 87, stage: "interview" },
+  { id: "p13", name: "Aryan Khanna", role: "Data Engineer", match: 82, stage: "interview" },
+  { id: "p14", name: "Sneha Bose", role: "Full Stack Engineer", match: 84, stage: "interview" },
+  // Offer
+  { id: "p15", name: "Devansh Rao", role: "ML Engineer", match: 92, stage: "offer" },
+  { id: "p16", name: "Tara Menon", role: "Senior AI Engineer", match: 95, stage: "offer" },
+  { id: "p17", name: "Kavya Desai", role: "Backend Engineer", match: 89, stage: "offer" },
+  { id: "p18", name: "Neel Bhatia", role: "DevOps Engineer", match: 86, stage: "offer" },
 ];
 
 const jobs = [
@@ -60,6 +91,48 @@ const transcript = [
 ];
 
 function RecruiterDemo() {
+  const [pipeline, setPipeline] = useState<PipeCard[]>(INITIAL_PIPELINE);
+  const [hired, setHired] = useState<PipeCard[]>([]);
+  const [archive, setArchive] = useState<PipeCard[]>([]);
+
+  const advance = (id: string) =>
+    setPipeline((p) =>
+      p.map((c) => {
+        if (c.id !== id) return c;
+        const idx = STAGES.findIndex((s) => s.key === c.stage);
+        return idx < STAGES.length - 1 ? { ...c, stage: STAGES[idx + 1].key } : c;
+      }),
+    );
+  const back = (id: string) =>
+    setPipeline((p) =>
+      p.map((c) => {
+        if (c.id !== id) return c;
+        const idx = STAGES.findIndex((s) => s.key === c.stage);
+        return idx > 0 ? { ...c, stage: STAGES[idx - 1].key } : c;
+      }),
+    );
+  const approve = (id: string) => {
+    const card = pipeline.find((c) => c.id === id);
+    if (!card) return;
+    setPipeline((p) => p.filter((c) => c.id !== id));
+    setHired((h) => [...h, card]);
+  };
+  const reject = (id: string) => {
+    const card = pipeline.find((c) => c.id === id);
+    if (!card) return;
+    setPipeline((p) => p.filter((c) => c.id !== id));
+    setArchive((a) => [...a, card]);
+  };
+  const addAgain = (id: string) => {
+    const card = archive.find((c) => c.id === id);
+    if (!card) return;
+    setArchive((a) => a.filter((c) => c.id !== id));
+    // bring back into Offer (next from Interview)
+    setPipeline((p) => [...p, { ...card, stage: "offer" }]);
+  };
+  const deleteForever = (id: string) =>
+    setArchive((a) => a.filter((c) => c.id !== id));
+
   return (
     <div className="recruiter relative min-h-screen text-foreground">
       <MeshBackground variant="constellation" />
@@ -88,16 +161,22 @@ function RecruiterDemo() {
         </div>
 
         <Tabs defaultValue="pipeline" className="mt-8">
-          <TabsList className="flex w-full flex-wrap gap-2 rounded-full bg-card/40 p-1">
-            <TabsTrigger value="pipeline" className="rounded-full data-[state=active]:bg-gold-soft data-[state=active]:text-gold"><KanbanSquare className="mr-2 h-4 w-4" /> Pipeline</TabsTrigger>
-            <TabsTrigger value="candidates" className="rounded-full data-[state=active]:bg-gold-soft data-[state=active]:text-gold"><Search className="mr-2 h-4 w-4" /> Candidates</TabsTrigger>
-            <TabsTrigger value="compare" className="rounded-full data-[state=active]:bg-gold-soft data-[state=active]:text-gold"><GitCompare className="mr-2 h-4 w-4" /> Compare</TabsTrigger>
-            <TabsTrigger value="jobs" className="rounded-full data-[state=active]:bg-gold-soft data-[state=active]:text-gold"><Briefcase className="mr-2 h-4 w-4" /> Jobs</TabsTrigger>
-            <TabsTrigger value="interview" className="rounded-full data-[state=active]:bg-gold-soft data-[state=active]:text-gold"><MessageSquare className="mr-2 h-4 w-4" /> Interview Replay</TabsTrigger>
-            <TabsTrigger value="analytics" className="rounded-full data-[state=active]:bg-gold-soft data-[state=active]:text-gold"><LineChartIcon className="mr-2 h-4 w-4" /> Analytics</TabsTrigger>
+          <TabsList className="flex w-full flex-wrap gap-2 rounded-2xl bg-card/40 p-1">
+            <TabsTrigger value="pipeline" className="rounded-xl data-[state=active]:bg-gold-soft data-[state=active]:text-gold"><KanbanSquare className="mr-2 h-4 w-4" /> Pipeline</TabsTrigger>
+            <TabsTrigger value="hired" className="rounded-xl data-[state=active]:bg-gold-soft data-[state=active]:text-gold"><UserCheck className="mr-2 h-4 w-4" /> New Employees <span className="ml-2 rounded-full bg-gold-soft px-1.5 text-[10px] text-gold">{hired.length}</span></TabsTrigger>
+            <TabsTrigger value="archive" className="rounded-xl data-[state=active]:bg-gold-soft data-[state=active]:text-gold"><Archive className="mr-2 h-4 w-4" /> Archive <span className="ml-2 rounded-full bg-gold-soft px-1.5 text-[10px] text-gold">{archive.length}</span></TabsTrigger>
+            <TabsTrigger value="candidates" className="rounded-xl data-[state=active]:bg-gold-soft data-[state=active]:text-gold"><Search className="mr-2 h-4 w-4" /> Candidates</TabsTrigger>
+            <TabsTrigger value="compare" className="rounded-xl data-[state=active]:bg-gold-soft data-[state=active]:text-gold"><GitCompare className="mr-2 h-4 w-4" /> Compare</TabsTrigger>
+            <TabsTrigger value="jobs" className="rounded-xl data-[state=active]:bg-gold-soft data-[state=active]:text-gold"><Briefcase className="mr-2 h-4 w-4" /> Jobs</TabsTrigger>
+            <TabsTrigger value="interview" className="rounded-xl data-[state=active]:bg-gold-soft data-[state=active]:text-gold"><MessageSquare className="mr-2 h-4 w-4" /> Interview Replay</TabsTrigger>
+            <TabsTrigger value="analytics" className="rounded-xl data-[state=active]:bg-gold-soft data-[state=active]:text-gold"><LineChartIcon className="mr-2 h-4 w-4" /> Analytics</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="pipeline" className="mt-6"><PipelineTab /></TabsContent>
+          <TabsContent value="pipeline" className="mt-6">
+            <PipelineTab pipeline={pipeline} onAdvance={advance} onBack={back} onApprove={approve} onReject={reject} />
+          </TabsContent>
+          <TabsContent value="hired" className="mt-6"><HiredTab hired={hired} /></TabsContent>
+          <TabsContent value="archive" className="mt-6"><ArchiveTab archive={archive} onAddAgain={addAgain} onDelete={deleteForever} /></TabsContent>
           <TabsContent value="candidates" className="mt-6"><CandidatesTab /></TabsContent>
           <TabsContent value="compare" className="mt-6"><CompareTab /></TabsContent>
           <TabsContent value="jobs" className="mt-6"><JobsTab /></TabsContent>
@@ -160,36 +239,171 @@ function CandidatesTab() {
   );
 }
 
-function PipelineTab() {
+function PipelineTab({
+  pipeline, onAdvance, onBack, onApprove, onReject,
+}: {
+  pipeline: PipeCard[];
+  onAdvance: (id: string) => void;
+  onBack: (id: string) => void;
+  onApprove: (id: string) => void;
+  onReject: (id: string) => void;
+}) {
   return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-      {pipelineStages.map((s) => (
-        <div key={s.key} className="glass rounded-2xl p-4">
-          <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-[0.25em] text-gold/80">{s.label}</p>
-            <span className="rounded-full bg-gold-soft px-2 py-0.5 text-[10px] text-gold">{s.ids.length}</span>
-          </div>
-          <div className="mt-4 space-y-3">
-            {s.ids.map((id) => {
-              const c = candidates.find((x) => x.id === id)!;
-              return (
-                <div key={id} className="rounded-xl border border-border bg-card/30 p-3">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium">{c.name}</p>
-                    <span className="font-display text-xl text-gold">{c.match}</span>
+    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+      {STAGES.map((s, stageIdx) => {
+        const cards = pipeline.filter((c) => c.stage === s.key);
+        const isFirst = stageIdx === 0;
+        const isLast = stageIdx === STAGES.length - 1;
+        const showApproveReject = s.key === "interview" || s.key === "offer";
+        return (
+          <div key={s.key} className="glass rounded-2xl p-4">
+            <div className="flex items-center justify-between">
+              <p className="text-xs uppercase tracking-[0.25em] text-gold/80">{s.label}</p>
+              <span className="rounded-full bg-gold-soft px-2 py-0.5 text-[10px] text-gold">{cards.length}</span>
+            </div>
+            <div className="mt-4 space-y-3">
+              {cards.map((c, i) => (
+                <div key={c.id} className="rounded-xl border border-border bg-card/30 p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        <span className="mr-1.5 text-[10px] text-muted-foreground">#{i + 1}</span>
+                        {c.name}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground truncate">{c.role}</p>
+                    </div>
+                    <span className="font-display text-lg text-gold shrink-0">{c.match}</span>
                   </div>
-                  <p className="text-[11px] text-muted-foreground">{c.role}</p>
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {c.skills.slice(0, 2).map((sk) => (
-                      <span key={sk} className="rounded-full border border-border bg-card/40 px-1.5 py-0.5 text-[10px] text-muted-foreground">{sk}</span>
-                    ))}
+
+                  <div className="mt-3 flex items-center justify-between gap-1">
+                    {!isFirst ? (
+                      <button
+                        onClick={() => onBack(c.id)}
+                        className="inline-flex items-center gap-1 rounded-full border border-border bg-card/40 px-2 py-1 text-[10px] text-muted-foreground hover:bg-card/70 hover:text-foreground"
+                        aria-label="Move back"
+                      >
+                        <ArrowLeftIcon className="h-3 w-3" /> Prev
+                      </button>
+                    ) : <span />}
+                    {!isLast ? (
+                      <button
+                        onClick={() => onAdvance(c.id)}
+                        className="inline-flex items-center gap-1 rounded-full border border-gold bg-gold-soft px-2 py-1 text-[10px] text-gold hover:opacity-90"
+                        aria-label="Move forward"
+                      >
+                        Next <ArrowRight className="h-3 w-3" />
+                      </button>
+                    ) : <span />}
                   </div>
+
+                  {showApproveReject && (
+                    <div className="mt-2 flex gap-2">
+                      <button
+                        onClick={() => onApprove(c.id)}
+                        className="flex-1 inline-flex items-center justify-center gap-1 rounded-full bg-emerald-500/15 px-2 py-1 text-[10px] text-emerald-400 hover:bg-emerald-500/25"
+                      >
+                        <Check className="h-3 w-3" /> Approve
+                      </button>
+                      <button
+                        onClick={() => onReject(c.id)}
+                        className="flex-1 inline-flex items-center justify-center gap-1 rounded-full bg-red-500/15 px-2 py-1 text-[10px] text-red-400 hover:bg-red-500/25"
+                      >
+                        <X className="h-3 w-3" /> Reject
+                      </button>
+                    </div>
+                  )}
                 </div>
-              );
-            })}
+              ))}
+              {cards.length === 0 && (
+                <p className="rounded-xl border border-dashed border-border/40 p-3 text-center text-[11px] text-muted-foreground">Empty</p>
+              )}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
+    </div>
+  );
+}
+
+function HiredTab({ hired }: { hired: PipeCard[] }) {
+  if (hired.length === 0) {
+    return (
+      <div className="glass rounded-2xl p-10 text-center text-sm text-muted-foreground">
+        Approve candidates from the Interview or Offer stage to move them here as new employees.
+      </div>
+    );
+  }
+  return (
+    <div className="glass overflow-hidden rounded-2xl">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-border bg-card/30 text-left text-[11px] uppercase tracking-wider text-muted-foreground">
+            <th className="px-5 py-3 w-12">#</th>
+            <th className="px-5 py-3">Name</th>
+            <th className="px-5 py-3">Role</th>
+            <th className="px-5 py-3 text-right">Match</th>
+            <th className="px-5 py-3">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {hired.map((c, i) => (
+            <tr key={c.id} className="border-b border-border/60">
+              <td className="px-5 py-4 text-muted-foreground">{i + 1}</td>
+              <td className="px-5 py-4 font-medium">{c.name}</td>
+              <td className="px-5 py-4 text-muted-foreground">{c.role}</td>
+              <td className="px-5 py-4 text-right font-display text-lg text-gold">{c.match}</td>
+              <td className="px-5 py-4">
+                <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] text-emerald-400">Hired</span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function ArchiveTab({ archive, onAddAgain, onDelete }: { archive: PipeCard[]; onAddAgain: (id: string) => void; onDelete: (id: string) => void }) {
+  if (archive.length === 0) {
+    return (
+      <div className="glass rounded-2xl p-10 text-center text-sm text-muted-foreground">
+        Rejected candidates land here temporarily. You can re-add them to Offer or delete them permanently.
+      </div>
+    );
+  }
+  return (
+    <div className="glass overflow-hidden rounded-2xl">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-border bg-card/30 text-left text-[11px] uppercase tracking-wider text-muted-foreground">
+            <th className="px-5 py-3 w-12">#</th>
+            <th className="px-5 py-3">Name</th>
+            <th className="px-5 py-3">Role</th>
+            <th className="px-5 py-3 text-right">Match</th>
+            <th className="px-5 py-3 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {archive.map((c, i) => (
+            <tr key={c.id} className="border-b border-border/60">
+              <td className="px-5 py-4 text-muted-foreground">{i + 1}</td>
+              <td className="px-5 py-4 font-medium">{c.name}</td>
+              <td className="px-5 py-4 text-muted-foreground">{c.role}</td>
+              <td className="px-5 py-4 text-right font-display text-lg text-gold">{c.match}</td>
+              <td className="px-5 py-4">
+                <div className="flex items-center justify-end gap-2">
+                  <Button size="sm" variant="outline" className="rounded-full" onClick={() => onAddAgain(c.id)}>
+                    <RotateCcw className="mr-1.5 h-3 w-3" /> Add again
+                  </Button>
+                  <Button size="sm" variant="ghost" className="rounded-full text-red-400 hover:text-red-300" onClick={() => onDelete(c.id)}>
+                    <Trash2 className="mr-1.5 h-3 w-3" /> Delete
+                  </Button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
