@@ -92,7 +92,7 @@ function InterviewSession() {
           {!completed && (
             <div className="glass rounded-2xl p-4">
               <p className="mb-2 text-xs uppercase tracking-wider text-muted-foreground">Your answer</p>
-              <Textarea ref={scrollRef as any} value={answer} onChange={(e) => setAnswer(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void send(false); } }} placeholder="Type your answer… (Enter to send · Shift+Enter for new line)" rows={6} disabled={sending || !currentQ} />
+              <Textarea value={answer} onChange={(e) => setAnswer(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void send(false); } }} placeholder="Type your answer… (Enter to send · Shift+Enter for new line)" rows={6} disabled={sending || !currentQ} />
               <div className="mt-3 flex justify-end">
                 <Button onClick={() => send(false)} disabled={sending || !answer.trim() || !currentQ} className="rounded-full">
                   {sending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting…</> : <><Send className="mr-2 h-4 w-4" /> Submit answer</>}
