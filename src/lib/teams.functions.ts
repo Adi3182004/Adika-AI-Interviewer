@@ -12,9 +12,13 @@ function randomToken() {
 export const ensureMyTeam = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { supabase, userId } = context;
+    const { userId } = context;
+    // Use admin client: caller is already authenticated via middleware; this avoids
+    // RLS edge cases when the user has no team membership yet (SELECT returns nothing
+    // and the INSERT race can show up as a policy violation).
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const { data: mine } = await supabase
+    const { data: mine } = await supabaseAdmin
       .from("team_members")
       .select("team_id, role, recruiter_teams!inner(id,name,owner_id)")
       .eq("user_id", userId)
@@ -25,15 +29,14 @@ export const ensureMyTeam = createServerFn({ method: "POST" })
       return { team: t, role: mine.role as string };
     }
 
-    // Create a fresh team owned by this user
-    const { data: team, error } = await supabase
+    const { data: team, error } = await supabaseAdmin
       .from("recruiter_teams")
       .insert({ name: "My team", owner_id: userId })
       .select("id,name,owner_id")
       .single();
     if (error) throw new Error(error.message);
 
-    const { error: memErr } = await supabase
+    const { error: memErr } = await supabaseAdmin
       .from("team_members")
       .insert({ team_id: team.id, user_id: userId, role: "owner" });
     if (memErr) throw new Error(memErr.message);
