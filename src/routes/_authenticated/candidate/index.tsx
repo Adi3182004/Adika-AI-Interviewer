@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Sparkles, FileText, Briefcase, Bot, ArrowRight } from "lucide-react";
+import { Sparkles, FileText, Briefcase, Bot, ArrowRight, CheckCircle2, Circle } from "lucide-react";
 import { CandidateShell } from "@/components/CandidateShell";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/candidate/")({
@@ -17,7 +18,7 @@ function CandidateDashboard() {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) return null;
       const [profile, resumes, apps, sessions, learning] = await Promise.all([
-        supabase.from("profiles").select("full_name").eq("id", user.user.id).maybeSingle(),
+        supabase.from("profiles").select("full_name,phone,education,experience_level,avatar_url").eq("id", user.user.id).maybeSingle(),
         supabase.from("resumes").select("id,ats_score,is_primary,title").eq("user_id", user.user.id),
         supabase.from("applications").select("id,stage,match_score").eq("candidate_id", user.user.id),
         supabase.from("interview_sessions").select("id,readiness_score,overall_score,status,role_target,created_at").eq("candidate_id", user.user.id).order("created_at", { ascending: false }).limit(5),
@@ -31,6 +32,22 @@ function CandidateDashboard() {
   const lastSession = data?.sessions[0];
   const inProgress = data?.learning.filter(l => l.status !== "done").length ?? 0;
 
+  // Profile completeness
+  const p = data?.profile;
+  const profileFields = [p?.full_name, p?.phone, p?.education, p?.experience_level, p?.avatar_url];
+  const profilePct = p ? Math.round((profileFields.filter(Boolean).length / profileFields.length) * 100) : 0;
+
+  // Onboarding checklist
+  const steps = [
+    { done: !!p?.full_name && !!p?.experience_level, label: "Complete your profile", to: "/candidate/profile" },
+    { done: (data?.resumes.length ?? 0) > 0, label: "Upload your first resume", to: "/candidate/resumes" },
+    { done: (data?.apps.length ?? 0) > 0, label: "Apply to a matching job", to: "/candidate/jobs" },
+    { done: (data?.sessions.length ?? 0) > 0, label: "Run a mock interview", to: "/candidate/interviews" },
+    { done: (data?.learning.length ?? 0) > 0, label: "Start a learning plan", to: "/candidate/learning" },
+  ];
+  const stepsDone = steps.filter(s => s.done).length;
+  const showChecklist = stepsDone < steps.length;
+
   return (
     <CandidateShell eyebrow="Welcome back" title={data?.profile?.full_name ? `Hello, ${data.profile.full_name.split(" ")[0]}` : "Your career hub"}>
       <div className="grid gap-6 md:grid-cols-4">
@@ -39,6 +56,41 @@ function CandidateDashboard() {
         <Kpi label="Applications" value={`${data?.apps.length ?? 0}`} sub={`${data?.apps.filter(a => a.stage === "interview").length ?? 0} in interview`} />
         <Kpi label="Learning items" value={`${inProgress}`} sub={`${(data?.learning.length ?? 0) - inProgress} completed`} />
       </div>
+
+      {showChecklist && (
+        <div className="glass mt-8 rounded-2xl p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.25em] text-primary">Get started</p>
+              <p className="mt-1 font-display text-2xl">First-run checklist</p>
+            </div>
+            <p className="text-sm text-muted-foreground">{stepsDone} of {steps.length} complete</p>
+          </div>
+          <Progress value={(stepsDone / steps.length) * 100} className="mt-3 h-1.5" />
+          <ul className="mt-5 grid gap-2 md:grid-cols-2">
+            {steps.map((s) => (
+              <li key={s.label}>
+                <Link to={s.to} className={`flex items-center gap-3 rounded-xl border border-border/60 p-3 text-sm transition hover:bg-accent/30 ${s.done ? "opacity-60" : ""}`}>
+                  {s.done ? <CheckCircle2 className="h-5 w-5 text-success" /> : <Circle className="h-5 w-5 text-muted-foreground" />}
+                  <span className={s.done ? "line-through" : ""}>{s.label}</span>
+                  {!s.done && <ArrowRight className="ml-auto h-4 w-4 text-muted-foreground" />}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {profilePct < 100 && (
+        <div className="glass mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl p-5">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium">Profile {profilePct}% complete</p>
+            <Progress value={profilePct} className="mt-2 h-1.5" />
+            <p className="mt-2 text-xs text-muted-foreground">A complete profile improves match scores and recruiter visibility.</p>
+          </div>
+          <Link to="/candidate/profile"><Button size="sm" variant="outline" className="rounded-full">Finish profile</Button></Link>
+        </div>
+      )}
 
       <div className="mt-8 grid gap-6 lg:grid-cols-3">
         <Link to="/candidate/resumes" className="glass group rounded-2xl p-6 transition hover:-translate-y-0.5 hover:shadow-luxe">
