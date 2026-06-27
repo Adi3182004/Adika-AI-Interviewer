@@ -69,6 +69,81 @@ function InterviewSession() {
   const sig = (lastAnalyzed?.signals ?? {}) as any;
   const qIndex = Math.min(assistantQs.length, 10);
 
+  if (completed) {
+    return (
+      <CandidateShell eyebrow={session?.role_target ?? "Session"}>
+        <div className="mb-4">
+          <Link to="/candidate/interviews" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-4 w-4" /> All sessions
+          </Link>
+        </div>
+        <div className="glass mx-auto max-w-2xl rounded-3xl p-10 text-center">
+          <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-full bg-primary/10 text-primary">
+            <PartyPopper className="h-8 w-8" />
+          </div>
+          <p className="text-xs uppercase tracking-[0.3em] text-primary">Interview Completed</p>
+          <h1 className="mt-2 font-display text-4xl">Well done{data_first_name(session) ? `, ${data_first_name(session)}` : ""}!</h1>
+          <p className="mt-3 text-muted-foreground">
+            You answered all 10 questions for <span className="text-foreground font-medium">{session?.role_target}</span>
+            {(session as any)?.company ? <> at <span className="text-foreground font-medium">{(session as any).company}</span></> : null}.
+            A detailed AI report has been generated and saved to your account.
+          </p>
+
+          <div className="mt-6 grid grid-cols-3 gap-3">
+            <Stat label="Overall" value={session?.overall_score ?? "—"} />
+            <Stat label="Readiness" value={session?.readiness_score ?? "—"} />
+            <Stat label="Questions" value={`${session?.question_count ?? 10}/10`} />
+          </div>
+
+          {session?.summary && (
+            <p className="mt-6 rounded-xl bg-accent/30 p-4 text-left text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">Summary: </span>{session.summary}
+            </p>
+          )}
+
+          <div className="mt-8 rounded-xl border border-dashed border-primary/40 bg-primary/5 p-4 text-sm">
+            <p className="font-medium">Next step</p>
+            <p className="mt-1 text-muted-foreground">
+              Head to your <span className="text-foreground font-medium">Dashboard</span> and scroll down to
+              "Your interview reports" to view, re-open, or download this full report anytime.
+            </p>
+          </div>
+
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            <Button
+              onClick={() => exportInterviewReport(id).catch((e) => toast.error(e.message ?? "Failed"))}
+              className="rounded-full"
+            >
+              <Download className="mr-2 h-4 w-4" /> Download report (PDF)
+            </Button>
+            <Link to="/candidate">
+              <Button variant="outline" className="rounded-full">
+                <LayoutDashboard className="mr-2 h-4 w-4" /> Go to Dashboard
+              </Button>
+            </Link>
+          </div>
+
+          {(!!session?.strengths?.length || !!session?.gaps?.length) && (
+            <div className="mt-8 grid gap-4 text-left sm:grid-cols-2">
+              {!!session?.strengths?.length && (
+                <div className="rounded-xl border border-border/60 p-4">
+                  <p className="text-xs font-medium text-success">Strengths</p>
+                  <div className="mt-2 flex flex-wrap gap-1">{session.strengths.map(s => <Badge key={s} variant="secondary" className="rounded-full text-[10px]">{s}</Badge>)}</div>
+                </div>
+              )}
+              {!!session?.gaps?.length && (
+                <div className="rounded-xl border border-border/60 p-4">
+                  <p className="text-xs font-medium text-warning">Skills to build</p>
+                  <div className="mt-2 flex flex-wrap gap-1">{session.gaps.map(s => <Badge key={s} variant="outline" className="rounded-full text-[10px]">{s}</Badge>)}</div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </CandidateShell>
+    );
+  }
+
   return (
     <CandidateShell eyebrow={session?.role_target ?? "Session"}>
       <div className="mb-4">
@@ -90,17 +165,15 @@ function InterviewSession() {
             </div>
           </div>
 
-          {!completed && (
-            <div className="glass rounded-2xl p-4">
-              <p className="mb-2 text-xs uppercase tracking-wider text-muted-foreground">Your answer</p>
-              <Textarea value={answer} onChange={(e) => setAnswer(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void send(false); } }} placeholder="Type your answer… (Enter to send · Shift+Enter for new line)" rows={6} disabled={sending || !currentQ} />
-              <div className="mt-3 flex justify-end">
-                <Button onClick={() => send(false)} disabled={sending || !answer.trim() || !currentQ} className="rounded-full">
-                  {sending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting…</> : <><Send className="mr-2 h-4 w-4" /> Submit answer</>}
-                </Button>
-              </div>
+          <div className="glass rounded-2xl p-4">
+            <p className="mb-2 text-xs uppercase tracking-wider text-muted-foreground">Your answer</p>
+            <Textarea value={answer} onChange={(e) => setAnswer(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void send(false); } }} placeholder="Type your answer… (Enter to send · Shift+Enter for new line)" rows={6} disabled={sending || !currentQ} />
+            <div className="mt-3 flex justify-end">
+              <Button onClick={() => send(false)} disabled={sending || !answer.trim() || !currentQ} className="rounded-full">
+                {sending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting…</> : <><Send className="mr-2 h-4 w-4" /> Submit answer</>}
+              </Button>
             </div>
-          )}
+          </div>
 
           {lastAnalyzed && (
             <div className="glass rounded-2xl p-6 space-y-2 text-sm">
@@ -130,41 +203,31 @@ function InterviewSession() {
           )}
         </div>
 
-
         <aside className="space-y-4">
           <div className="glass rounded-2xl p-6">
             <p className="text-xs uppercase tracking-wider text-muted-foreground">Status</p>
             <Badge className="mt-2 rounded-full capitalize">{session?.status?.replace("_"," ") ?? "—"}</Badge>
             <div className="mt-4 grid grid-cols-2 gap-3 text-center">
-              <div><p className="text-[10px] uppercase text-muted-foreground">Questions</p><p className="font-display text-2xl">{session?.question_count ?? 0}/10</p></div>
+              <div><p className="text-[10px] uppercase text-muted-foreground">Questions</p><p className="font-display text-2xl">{qIndex}/10</p></div>
               <div><p className="text-[10px] uppercase text-muted-foreground">Overall</p><p className="font-display text-2xl">{session?.overall_score ?? "—"}</p></div>
             </div>
           </div>
-          {completed && (
-            <div className="glass rounded-2xl p-6 space-y-3">
-              <p className="text-sm font-medium">Final Summary</p>
-              <p className="text-sm text-muted-foreground">{session?.summary}</p>
-              <div>
-                <p className="text-[10px] uppercase text-muted-foreground">Readiness</p>
-                <p className="font-display text-4xl">{session?.readiness_score}</p>
-              </div>
-              {!!session?.strengths?.length && (
-                <div>
-                  <p className="text-xs font-medium text-success">Strengths</p>
-                  <div className="mt-1 flex flex-wrap gap-1">{session.strengths.map(s => <Badge key={s} variant="secondary" className="rounded-full text-[10px]">{s}</Badge>)}</div>
-                </div>
-              )}
-              {!!session?.gaps?.length && (
-                <div>
-                  <p className="text-xs font-medium text-warning">Skills to build</p>
-                  <div className="mt-1 flex flex-wrap gap-1">{session.gaps.map(s => <Badge key={s} variant="outline" className="rounded-full text-[10px]">{s}</Badge>)}</div>
-                  <Link to="/candidate/learning" className="mt-3 inline-block text-xs text-primary">Open learning roadmap →</Link>
-                </div>
-              )}
-            </div>
-          )}
         </aside>
       </div>
     </CandidateShell>
   );
+}
+
+function Stat({ label, value }: { label: string; value: any }) {
+  return (
+    <div className="rounded-xl border border-border/60 p-3">
+      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className="font-display text-2xl">{value}</p>
+    </div>
+  );
+}
+
+function data_first_name(session: any): string | null {
+  // best-effort: not always available on the session row
+  return null;
 }
