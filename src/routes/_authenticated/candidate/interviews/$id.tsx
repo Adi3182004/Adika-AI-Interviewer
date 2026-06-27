@@ -117,7 +117,7 @@ function InterviewSession() {
           {!completed && (
             <div className="border-t border-border/60 p-4">
               <div className="flex gap-2">
-                <Textarea value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="Type your answer…" rows={2} className="flex-1" disabled={sending} />
+                <Textarea value={answer} onChange={(e) => setAnswer(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void send(false); } }} placeholder="Type your answer… (Enter to send · Shift+Enter for new line)" rows={2} className="flex-1" disabled={sending} />
                 <Button onClick={() => send(false)} disabled={sending || !answer.trim()} className="rounded-full"><Send className="h-4 w-4" /></Button>
               </div>
             </div>
