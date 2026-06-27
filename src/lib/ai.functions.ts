@@ -243,7 +243,7 @@ export const interviewTurn = createServerFn({ method: "POST" })
       }).eq("id", data.sessionId);
       if (fin.gaps?.length) {
         await supabase.from("learning_items").insert(
-          fin.gaps.slice(0, 8).map(skill => ({
+          fin.gaps.slice(0, 8).map((skill: string) => ({
             candidate_id: userId, skill, source_session_id: data.sessionId, status: "todo",
           })),
         );
