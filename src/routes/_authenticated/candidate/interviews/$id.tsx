@@ -1,9 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Bot, Loader2, Send, User } from "lucide-react";
+import { ArrowLeft, Bot, Loader2, Send } from "lucide-react";
 import { CandidateShell } from "@/components/CandidateShell";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -22,7 +22,7 @@ function InterviewSession() {
   const turn = useServerFn(interviewTurn);
   const [answer, setAnswer] = useState("");
   const [sending, setSending] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  
 
   const { data: session } = useQuery({
     queryKey: ["interview", id],
@@ -46,7 +46,7 @@ function InterviewSession() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.id, hasFirstQuestion]);
 
-  useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }); }, [messages?.length]);
+  
 
   async function send(isFirst = false) {
     if (!isFirst && !answer.trim()) return;
@@ -60,6 +60,14 @@ function InterviewSession() {
     setSending(false);
   }
 
+  const msgs = messages ?? [];
+  const assistantQs = msgs.filter(m => m.role === "assistant");
+  const userAs = msgs.filter(m => m.role === "user");
+  const currentQ = assistantQs[assistantQs.length - 1];
+  const lastAnalyzed = [...userAs].reverse().find(m => m.score != null);
+  const sig = (lastAnalyzed?.signals ?? {}) as any;
+  const qIndex = assistantQs.length;
+
   return (
     <CandidateShell eyebrow={session?.role_target ?? "Session"}>
       <div className="mb-4">
@@ -69,60 +77,58 @@ function InterviewSession() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-        <div className="glass flex h-[70vh] flex-col rounded-2xl">
-          <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto p-6">
-            {(messages ?? []).map((m) => {
-              const sig = (m.signals ?? {}) as any;
-              return (
-                <div key={m.id} className={`flex gap-3 ${m.role === "user" ? "flex-row-reverse" : ""}`}>
-                  <div className={`grid h-8 w-8 shrink-0 place-items-center rounded-full ${m.role === "user" ? "bg-secondary" : "bg-primary text-primary-foreground"}`}>
-                    {m.role === "user" ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
-                  </div>
-                  <div className={`max-w-[80%] space-y-2 ${m.role === "user" ? "items-end" : ""}`}>
-                    <div className={`rounded-2xl px-4 py-3 text-sm ${m.role === "user" ? "bg-secondary" : "bg-card border border-border"}`}>
-                      <p className="whitespace-pre-wrap">{m.content}</p>
-                    </div>
-                    {m.role === "user" && m.score != null && (
-                      <div className="rounded-xl border border-border/60 bg-card/60 p-3 text-xs space-y-1.5">
-                        <div className="flex items-center justify-between">
-                          <span className="font-medium text-[11px] uppercase tracking-wider text-muted-foreground">AI Analysis</span>
-                          <Badge className="rounded-full">Score {m.score}/100</Badge>
-                        </div>
-                        {sig.feedback && <p className="text-foreground/90">{sig.feedback}</p>}
-                        {sig.what_was_good?.length > 0 && (
-                          <div><span className="text-success font-medium">✓ Worked:</span> <span className="text-muted-foreground">{sig.what_was_good.join(" · ")}</span></div>
-                        )}
-                        {sig.what_to_improve?.length > 0 && (
-                          <div><span className="text-warning font-medium">↑ Improve:</span> <span className="text-muted-foreground">{sig.what_to_improve.join(" · ")}</span></div>
-                        )}
-                        {sig.ideal_answer_sketch && (
-                          <div className="pt-1 border-t border-border/40 text-muted-foreground"><span className="font-medium text-foreground/80">Model:</span> {sig.ideal_answer_sketch}</div>
-                        )}
-                        {(sig.clarity != null || sig.technical != null || sig.depth != null) && (
-                          <div className="flex gap-3 pt-1 text-[10px] text-muted-foreground">
-                            {sig.clarity != null && <span>Clarity {sig.clarity}</span>}
-                            {sig.technical != null && <span>Technical {sig.technical}</span>}
-                            {sig.depth != null && <span>Depth {sig.depth}</span>}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-            {sending && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> AI is thinking…</div>}
+        <div className="space-y-4">
+          <div className="glass rounded-2xl p-6">
+            <div className="flex items-center justify-between">
+              <p className="text-xs uppercase tracking-wider text-muted-foreground">Question {qIndex || "—"} of 10</p>
+              <Badge variant="secondary" className="rounded-full">AI Interviewer</Badge>
+            </div>
+            <div className="mt-3 flex gap-3">
+              <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground"><Bot className="h-4 w-4" /></div>
+              <p className="whitespace-pre-wrap text-base leading-relaxed">{currentQ?.content ?? (sending ? "Preparing your first question…" : "—")}</p>
+            </div>
           </div>
 
           {!completed && (
-            <div className="border-t border-border/60 p-4">
-              <div className="flex gap-2">
-                <Textarea value={answer} onChange={(e) => setAnswer(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void send(false); } }} placeholder="Type your answer… (Enter to send · Shift+Enter for new line)" rows={2} className="flex-1" disabled={sending} />
-                <Button onClick={() => send(false)} disabled={sending || !answer.trim()} className="rounded-full"><Send className="h-4 w-4" /></Button>
+            <div className="glass rounded-2xl p-4">
+              <p className="mb-2 text-xs uppercase tracking-wider text-muted-foreground">Your answer</p>
+              <Textarea value={answer} onChange={(e) => setAnswer(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void send(false); } }} placeholder="Type your answer… (Enter to send · Shift+Enter for new line)" rows={6} disabled={sending || !currentQ} />
+              <div className="mt-3 flex justify-end">
+                <Button onClick={() => send(false)} disabled={sending || !answer.trim() || !currentQ} className="rounded-full">
+                  {sending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting…</> : <><Send className="mr-2 h-4 w-4" /> Submit answer</>}
+                </Button>
               </div>
             </div>
           )}
+
+          {lastAnalyzed && (
+            <div className="glass rounded-2xl p-6 space-y-2 text-sm">
+              <div className="flex items-center justify-between">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">Previous answer analysis</p>
+                <Badge className="rounded-full">Score {lastAnalyzed.score}/100</Badge>
+              </div>
+              <p className="text-xs text-muted-foreground italic">Your answer: "{lastAnalyzed.content.slice(0, 140)}{lastAnalyzed.content.length > 140 ? "…" : ""}"</p>
+              {sig.feedback && <p className="text-foreground/90">{sig.feedback}</p>}
+              {sig.what_was_good?.length > 0 && (
+                <div className="text-xs"><span className="text-success font-medium">✓ Worked:</span> <span className="text-muted-foreground">{sig.what_was_good.join(" · ")}</span></div>
+              )}
+              {sig.what_to_improve?.length > 0 && (
+                <div className="text-xs"><span className="text-warning font-medium">↑ Improve:</span> <span className="text-muted-foreground">{sig.what_to_improve.join(" · ")}</span></div>
+              )}
+              {sig.ideal_answer_sketch && (
+                <div className="pt-2 border-t border-border/40 text-xs text-muted-foreground"><span className="font-medium text-foreground/80">Model answer:</span> {sig.ideal_answer_sketch}</div>
+              )}
+              {(sig.clarity != null || sig.technical != null || sig.depth != null) && (
+                <div className="flex gap-3 pt-1 text-[10px] text-muted-foreground">
+                  {sig.clarity != null && <span>Clarity {sig.clarity}</span>}
+                  {sig.technical != null && <span>Technical {sig.technical}</span>}
+                  {sig.depth != null && <span>Depth {sig.depth}</span>}
+                </div>
+              )}
+            </div>
+          )}
         </div>
+
 
         <aside className="space-y-4">
           <div className="glass rounded-2xl p-6">
