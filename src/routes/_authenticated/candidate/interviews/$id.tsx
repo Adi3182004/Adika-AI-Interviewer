@@ -39,12 +39,12 @@ function InterviewSession() {
   const hasFirstQuestion = (messages ?? []).some(m => m.role === "assistant");
 
   useEffect(() => {
-    // Auto-kick the first question if not started yet
-    if (session && !hasFirstQuestion && !sending && !completed) {
+    // Auto-kick the first question only if no questions exist yet
+    if (session && messages && messages.length === 0 && !sending && !completed) {
       void send(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.id, hasFirstQuestion]);
+  }, [session?.id, messages?.length]);
 
   
 
