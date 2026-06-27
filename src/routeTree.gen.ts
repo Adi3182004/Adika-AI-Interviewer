@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RecruiterDemoRouteImport } from './routes/recruiter.demo'
+import { Route as JobsIdRouteImport } from './routes/jobs.$id'
 import { Route as AuthenticatedRecruiterRouteRouteImport } from './routes/_authenticated/recruiter/route'
 import { Route as AuthenticatedCandidateRouteRouteImport } from './routes/_authenticated/candidate/route'
 import { Route as AuthenticatedRecruiterIndexRouteImport } from './routes/_authenticated/recruiter/index'
@@ -60,6 +61,11 @@ const IndexRoute = IndexRouteImport.update({
 const RecruiterDemoRoute = RecruiterDemoRouteImport.update({
   id: '/recruiter/demo',
   path: '/recruiter/demo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JobsIdRoute = JobsIdRouteImport.update({
+  id: '/jobs/$id',
+  path: '/jobs/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRecruiterRouteRoute =
@@ -207,6 +213,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/candidate': typeof AuthenticatedCandidateRouteRouteWithChildren
   '/recruiter': typeof AuthenticatedRecruiterRouteRouteWithChildren
+  '/jobs/$id': typeof JobsIdRoute
   '/recruiter/demo': typeof RecruiterDemoRoute
   '/candidate/': typeof AuthenticatedCandidateIndexRoute
   '/recruiter/': typeof AuthenticatedRecruiterIndexRoute
@@ -234,6 +241,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/jobs/$id': typeof JobsIdRoute
   '/recruiter/demo': typeof RecruiterDemoRoute
   '/candidate': typeof AuthenticatedCandidateIndexRoute
   '/recruiter': typeof AuthenticatedRecruiterIndexRoute
@@ -265,6 +273,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/candidate': typeof AuthenticatedCandidateRouteRouteWithChildren
   '/_authenticated/recruiter': typeof AuthenticatedRecruiterRouteRouteWithChildren
+  '/jobs/$id': typeof JobsIdRoute
   '/recruiter/demo': typeof RecruiterDemoRoute
   '/_authenticated/candidate/': typeof AuthenticatedCandidateIndexRoute
   '/_authenticated/recruiter/': typeof AuthenticatedRecruiterIndexRoute
@@ -296,6 +305,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/candidate'
     | '/recruiter'
+    | '/jobs/$id'
     | '/recruiter/demo'
     | '/candidate/'
     | '/recruiter/'
@@ -323,6 +333,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/reset-password'
+    | '/jobs/$id'
     | '/recruiter/demo'
     | '/candidate'
     | '/recruiter'
@@ -353,6 +364,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/_authenticated/candidate'
     | '/_authenticated/recruiter'
+    | '/jobs/$id'
     | '/recruiter/demo'
     | '/_authenticated/candidate/'
     | '/_authenticated/recruiter/'
@@ -382,6 +394,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  JobsIdRoute: typeof JobsIdRoute
   RecruiterDemoRoute: typeof RecruiterDemoRoute
 }
 
@@ -420,6 +433,13 @@ declare module '@tanstack/react-router' {
       path: '/recruiter/demo'
       fullPath: '/recruiter/demo'
       preLoaderRoute: typeof RecruiterDemoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/jobs/$id': {
+      id: '/jobs/$id'
+      path: '/jobs/$id'
+      fullPath: '/jobs/$id'
+      preLoaderRoute: typeof JobsIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/recruiter': {
@@ -686,6 +706,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  JobsIdRoute: JobsIdRoute,
   RecruiterDemoRoute: RecruiterDemoRoute,
 }
 export const routeTree = rootRouteImport

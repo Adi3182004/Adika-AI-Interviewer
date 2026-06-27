@@ -127,7 +127,7 @@ function PublicJob() {
 
           {job.skills?.length ? (
             <div className="mt-5 flex flex-wrap gap-1.5">
-              {job.skills.map(s => <Badge key={s} variant="secondary" className="rounded-full text-[10px]">{s}</Badge>)}
+              {job.skills.map((s: string) => <Badge key={s} variant="secondary" className="rounded-full text-[10px]">{s}</Badge>)}
             </div>
           ) : null}
 
