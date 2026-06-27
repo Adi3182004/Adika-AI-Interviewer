@@ -22,7 +22,7 @@ function InterviewSession() {
   const turn = useServerFn(interviewTurn);
   const [answer, setAnswer] = useState("");
   const [sending, setSending] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  
 
   const { data: session } = useQuery({
     queryKey: ["interview", id],
