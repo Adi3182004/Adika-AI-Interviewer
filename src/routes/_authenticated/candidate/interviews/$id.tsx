@@ -66,7 +66,7 @@ function InterviewSession() {
   const currentQ = assistantQs[assistantQs.length - 1];
   const lastAnalyzed = [...userAs].reverse().find(m => m.score != null);
   const sig = (lastAnalyzed?.signals ?? {}) as any;
-  const qIndex = assistantQs.length;
+  const qIndex = Math.min(assistantQs.length, 10);
 
   return (
     <CandidateShell eyebrow={session?.role_target ?? "Session"}>
