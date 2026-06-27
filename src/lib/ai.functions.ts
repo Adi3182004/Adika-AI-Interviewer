@@ -177,40 +177,28 @@ export const interviewTurn = createServerFn({ method: "POST" })
     let userScore: number | null = null;
     let userFeedback: string | null = null;
     if (data.userAnswer) {
-      const { output: ev } = await generateText({
-        model: gateway(),
-        output: Output.object({
-          schema: z.object({
-            score: z.number().min(0).max(100),
-            signals: z.object({
-              clarity: z.number().min(0).max(100),
-              technical: z.number().min(0).max(100),
-              depth: z.number().min(0).max(100),
-            }),
-            feedback: z.string(),
-            what_was_good: z.array(z.string()).max(4),
-            what_to_improve: z.array(z.string()).max(4),
-            ideal_answer_sketch: z.string(),
-          }),
-        }),
-        prompt: `You are a senior interviewer grading like a professional teacher.\n${contextHeader}\nQUESTION: ${[...(messages ?? [])].reverse().find((m: { role: string }) => m.role === "assistant")?.content ?? ""}\nANSWER: ${data.userAnswer}\n\nReturn JSON with score (0-100), signals, 1-2 sentence feedback, 2-3 concrete 'what was good' points, 2-3 'what to improve' points, and a 3-sentence sketch of an ideal answer.`,
+      const lastQ = [...(messages ?? [])].reverse().find((m: { role: string }) => m.role === "assistant")?.content ?? "";
+      const ev = await jsonCall(`You are a senior interviewer grading like a professional teacher.\n${contextHeader}\nQUESTION: ${lastQ}\nANSWER: ${data.userAnswer}\n\nReturn ONLY JSON with this exact shape:\n{"score": number 0-100, "signals": {"clarity": number, "technical": number, "depth": number}, "feedback": "1-2 sentences", "what_was_good": ["..."], "what_to_improve": ["..."], "ideal_answer_sketch": "3 sentences"}`, {
+        score: 60, signals: { clarity: 60, technical: 60, depth: 60 },
+        feedback: "Answer recorded.", what_was_good: [], what_to_improve: [], ideal_answer_sketch: "",
       });
-      userScore = ev.score;
-      userFeedback = ev.feedback;
+      userScore = Number(ev.score) || 0;
+      userFeedback = String(ev.feedback ?? "");
       await supabase.from("interview_messages").insert({
         session_id: data.sessionId,
         role: "user",
         content: data.userAnswer,
-        score: ev.score,
+        score: userScore,
         signals: {
-          ...ev.signals,
+          ...(ev.signals ?? {}),
           feedback: ev.feedback,
-          what_was_good: ev.what_was_good,
-          what_to_improve: ev.what_to_improve,
-          ideal_answer_sketch: ev.ideal_answer_sketch,
+          what_was_good: ev.what_was_good ?? [],
+          what_to_improve: ev.what_to_improve ?? [],
+          ideal_answer_sketch: ev.ideal_answer_sketch ?? "",
         },
       });
     }
+
 
     const turnCount = (session.question_count ?? 0) + (data.userAnswer ? 1 : 0);
     const MAX_QUESTIONS = 10;
