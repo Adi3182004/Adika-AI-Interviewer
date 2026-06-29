@@ -240,6 +240,14 @@
   animation: drift 22s ease-in-out infinite;
 }
 
+/* Any element carrying the .recruiter scope (including portalled
+ * dialogs / popovers / sheets) should default to the dark-theme
+ * light foreground so inherited text stays readable. */
+.recruiter {
+  color: var(--color-foreground);
+  background-color: transparent;
+}
+
 /* ---------- Recruiter dark-theme legibility safety net ----------
  * On the recruiter (dark) surface, any hardcoded dark text utility
  * (black / deep gray / deep purple / indigo / violet / slate / zinc)
