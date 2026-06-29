@@ -239,3 +239,44 @@
 @utility animate-drift {
   animation: drift 22s ease-in-out infinite;
 }
+
+/* ---------- Recruiter dark-theme legibility safety net ----------
+ * On the recruiter (dark) surface, any hardcoded dark text utility
+ * (black / deep gray / deep purple / indigo / violet / slate / zinc)
+ * is forced to the light themed foreground so content stays readable
+ * against the dark background. Gold tokens and themed colors are
+ * intentionally left untouched.
+ */
+.recruiter :is(
+  .text-black,
+  .text-neutral-700, .text-neutral-800, .text-neutral-900, .text-neutral-950,
+  .text-gray-700,    .text-gray-800,    .text-gray-900,    .text-gray-950,
+  .text-slate-700,   .text-slate-800,   .text-slate-900,   .text-slate-950,
+  .text-zinc-700,    .text-zinc-800,    .text-zinc-900,    .text-zinc-950,
+  .text-stone-700,   .text-stone-800,   .text-stone-900,   .text-stone-950,
+  .text-purple-700,  .text-purple-800,  .text-purple-900,  .text-purple-950,
+  .text-violet-700,  .text-violet-800,  .text-violet-900,  .text-violet-950,
+  .text-indigo-700,  .text-indigo-800,  .text-indigo-900,  .text-indigo-950
+) {
+  color: var(--color-foreground) !important;
+}
+
+/* Same guard for inline arbitrary dark hex text colors that occasionally
+ * slip into recruiter views (e.g. text-[#111], text-[#0f172a]). We can't
+ * match every hex, but the most common near-black values are covered. */
+.recruiter :is(
+  [class*="text-[#000"],
+  [class*="text-[#111"],
+  [class*="text-[#1a"],
+  [class*="text-[#1e"],
+  [class*="text-[#0f"],
+  [class*="text-[#0a"],
+  [class*="text-[#222"],
+  [class*="text-[#2a"],
+  [class*="text-[#33"],
+  [class*="text-[#3b0"],
+  [class*="text-[#4c1"],
+  [class*="text-[#581"]
+):not([class*="bg-gold"]):not([class*="from-[#A87E3F]"]):not([class*="from-[#C9A86A]"]):not([class*="from-[#DFC189]"]) {
+  color: var(--color-foreground) !important;
+}
