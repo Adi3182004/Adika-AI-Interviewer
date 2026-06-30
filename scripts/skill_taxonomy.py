@@ -10,7 +10,6 @@ from __future__ import annotations
 import argparse
 import json
 from collections import defaultdict, deque
-from dataclasses import dataclass
 
 
 # Edges encode "knowing A is meaningfully helpful when learning B" and are
