@@ -94,24 +94,75 @@ function ResumeEditor() {
   }, [resume]);
 
   async function save() {
+    const missingFields: string[] = [];
+    
+    if (!title?.trim()) missingFields.push("Resume Title");
+    if (!content.summary?.trim()) missingFields.push("Professional Summary");
+    if (!content.skills || content.skills.length === 0) missingFields.push("Skills (at least one skill)");
+    
+    if (!content.experience || content.experience.length === 0) {
+      missingFields.push("Experience (at least one role)");
+    } else {
+      content.experience.forEach((exp, idx) => {
+        if (!exp.company?.trim()) missingFields.push(`Experience #${idx + 1} - Company`);
+        if (!exp.role?.trim()) missingFields.push(`Experience #${idx + 1} - Role`);
+        if (!exp.period?.trim()) missingFields.push(`Experience #${idx + 1} - Time Period`);
+        if (!exp.bullets?.trim()) missingFields.push(`Experience #${idx + 1} - Bullets`);
+      });
+    }
+    
+    if (!content.education || content.education.length === 0) {
+      missingFields.push("Education (at least one entry)");
+    } else {
+      content.education.forEach((edu, idx) => {
+        if (!edu.school?.trim()) missingFields.push(`Education #${idx + 1} - School`);
+        if (!edu.degree?.trim()) missingFields.push(`Education #${idx + 1} - Degree`);
+        if (!edu.year?.trim()) missingFields.push(`Education #${idx + 1} - Year`);
+      });
+    }
+    
+    if (!content.projects || content.projects.length === 0) {
+      missingFields.push("Projects (at least one project)");
+    } else {
+      content.projects.forEach((proj, idx) => {
+        if (!proj.name?.trim()) missingFields.push(`Project #${idx + 1} - Project Name`);
+        if (!proj.description?.trim()) missingFields.push(`Project #${idx + 1} - Description`);
+      });
+    }
+    
+    if (missingFields.length > 0) {
+      toast.error(`Please enter all mandatory fields: ${missingFields.slice(0, 3).join(", ")}${missingFields.length > 3 ? ` and ${missingFields.length - 3} more` : ""}`);
+      return false;
+    }
+    
     setSaving(true);
     const { error } = await supabase
       .from("resumes")
       .update({ title, content: content as any })
       .eq("id", id);
     setSaving(false);
-    if (error) return toast.error(error.message);
+    
+    if (error) {
+      toast.error(error.message);
+      return false;
+    }
+    
     toast.success("Saved");
     qc.invalidateQueries({ queryKey: ["resume", id] });
     qc.invalidateQueries({ queryKey: ["resumes"] });
+    return true;
   }
 
   async function runAnalysis() {
     setAnalyzing(true);
     try {
-      await save();
+      const saved = await save();
+      if (!saved) {
+        setAnalyzing(false);
+        return;
+      }
       await analyze({ data: { resumeId: id } });
-      toast.success("ATS analysis complete");
+      toast.success("ATS Analysis complete");
       qc.invalidateQueries({ queryKey: ["resume", id] });
     } catch (e: any) {
       toast.error(e.message ?? "AI analysis failed");
@@ -450,10 +501,13 @@ function ResumeEditor() {
         <div className="flex items-center gap-2">
           <Target className="h-5 w-5 text-primary" />
           <h2 className="font-display text-2xl">Role-Targeted Analysis</h2>
+          <Badge variant="secondary" className="rounded-full bg-secondary/50 text-[10px]">
+            Optional
+          </Badge>
         </div>
         <p className="mt-1 text-sm text-muted-foreground">
           Tell us the role you're targeting — we'll list concrete plus points and drawbacks for THIS
-          role, not generic feedback.
+          role, not generic feedback. (Optional: Not required for saving the resume or running standard ATS analysis)
         </p>
 
         <div className="mt-5 grid gap-3 md:grid-cols-2">

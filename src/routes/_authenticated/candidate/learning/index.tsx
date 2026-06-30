@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   GraduationCap,
@@ -15,11 +15,14 @@ import {
   BookOpen,
   Plus,
   Trash2,
+  RefreshCw,
+  Sparkles,
 } from "lucide-react";
 import { CandidateShell } from "@/components/CandidateShell";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -28,6 +31,13 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { generateLearningRoadmap } from "@/lib/ai.functions";
 
@@ -45,6 +55,143 @@ function Learning() {
   const [newSkill, setNewSkill] = useState("");
   const [newUrl, setNewUrl] = useState("");
   const [adding, setAdding] = useState(false);
+  const [selectedResumeId, setSelectedResumeId] = useState<string>("");
+  const [selectedResume, setSelectedResume] = useState<any>(null);
+  const [applying, setApplying] = useState(false);
+
+  async function applyResumeContext() {
+    if (!selectedResumeId) {
+      toast.error("Please select a resume first.");
+      return;
+    }
+
+    const tf = (selectedResume?.targeted_feedback as any);
+    if (!tf?.role_fit_score) {
+      toast.error(
+        "This resume has no Role-Targeted Analysis yet. Open the resume → fill in a Target Role → click \"Analyze for this role\" first."
+      );
+      return;
+    }
+
+    setApplying(true);
+
+    const promise = (async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) throw new Error("Not signed in");
+
+      // 1. Collect skills to seed: missing_skills + action_items phrased as skills
+      const missingSkills: string[] = tf.missing_skills ?? [];
+      const actionItems: string[] = (tf.action_items ?? []).map((a: string) =>
+        // Extract a short skill label from the action item text (first ~40 chars)
+        a.length > 50 ? a.slice(0, 47) + "…" : a
+      );
+
+      // Combine: missing skills first, then action items as additional tasks
+      const candidateSkills = [
+        ...missingSkills,
+        ...actionItems.filter(
+          (a) => !missingSkills.some((s) => a.toLowerCase().includes(s.toLowerCase()))
+        ),
+      ].slice(0, 12); // Cap at 12 auto-generated tasks
+
+      // 2. Load existing tasks to avoid duplicates
+      const { data: existing } = await supabase
+        .from("learning_items")
+        .select("id,skill")
+        .eq("candidate_id", u.user.id);
+
+      const existingSkillsLower = new Set(
+        (existing ?? []).map((e) => e.skill.toLowerCase().trim())
+      );
+
+      // 3. Insert any new skills not already present
+      const toInsert = candidateSkills.filter(
+        (s) => !existingSkillsLower.has(s.toLowerCase().trim())
+      );
+
+      if (toInsert.length > 0) {
+        await supabase.from("learning_items").insert(
+          toInsert.map((skill) => ({
+            candidate_id: u.user!.id,
+            skill,
+            status: "todo",
+          }))
+        );
+      }
+
+      // 4. Re-fetch ALL items (existing + newly added) and generate/regenerate roadmaps
+      const { data: allItems } = await supabase
+        .from("learning_items")
+        .select("id,skill,status")
+        .eq("candidate_id", u.user.id);
+
+      for (const item of allItems ?? []) {
+        // Clear existing roadmap so fresh role-targeted one is created
+        await supabase.from("learning_items").update({ roadmap: null }).eq("id", item.id);
+        await buildRoadmap({ data: { itemId: item.id, resumeId: selectedResumeId } });
+      }
+
+      qc.invalidateQueries({ queryKey: ["learning"] });
+    })();
+
+    toast.promise(promise, {
+      loading: "Seeding tasks from resume analysis & generating roadmaps…",
+      success: "Learning roadmap updated based on your resume & target role!",
+      error: "Something went wrong generating roadmaps.",
+    });
+
+    try {
+      await promise;
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setApplying(false);
+    }
+  }
+
+
+  const { data: resumes } = useQuery({
+    queryKey: ["resumes"],
+    queryFn: async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return [];
+      const { data } = await supabase
+        .from("resumes")
+        .select("id,title,is_primary,targeted_feedback")
+        .eq("user_id", u.user.id);
+      return data ?? [];
+    },
+  });
+
+  useEffect(() => {
+    if (resumes && resumes.length > 0 && !selectedResumeId) {
+      const primary = resumes.find((r) => r.is_primary);
+      setSelectedResumeId(primary ? primary.id : resumes[0].id);
+    }
+  }, [resumes, selectedResumeId]);
+
+  // Load full resume object when a resume is selected
+  useEffect(() => {
+    if (selectedResumeId && resumes) {
+      const found = resumes.find((r) => r.id === selectedResumeId);
+      setSelectedResume(found || null);
+    }
+  }, [selectedResumeId, resumes]);
+
+  async function forceGenerateRoadmap(itemId: string) {
+    setBusyId(itemId);
+    try {
+      const rm = await buildRoadmap({ data: { itemId, resumeId: selectedResumeId || undefined } });
+      toast.success("Roadmap generated successfully!");
+      if (openItem && openItem.id === itemId) {
+        setOpenItem({ ...openItem, roadmap: rm });
+      }
+      qc.invalidateQueries({ queryKey: ["learning"] });
+    } catch (e: any) {
+      toast.error(e.message ?? "Generation failed");
+    }
+    setBusyId(null);
+  }
 
   async function addCustom() {
     if (!newSkill.trim()) return;
@@ -68,6 +215,24 @@ function Learning() {
       toast.error(e.message ?? "Failed");
     }
     setAdding(false);
+  }
+
+  async function deleteRoadmap(id: string) {
+    await supabase.from("learning_items").update({ roadmap: null }).eq("id", id);
+    qc.invalidateQueries({ queryKey: ["learning"] });
+    toast.success("Roadmap cleared");
+  }
+
+  async function deleteAllInColumn(status: "todo" | "in_progress" | "done") {
+    const { data: u } = await supabase.auth.getUser();
+    if (!u.user) return;
+    await supabase
+      .from("learning_items")
+      .delete()
+      .eq("candidate_id", u.user.id)
+      .eq("status", status);
+    qc.invalidateQueries({ queryKey: ["learning"] });
+    toast.success("All items in column deleted");
   }
 
   async function removeItem(id: string) {
@@ -95,13 +260,13 @@ function Learning() {
   }
 
   async function openRoadmap(item: any) {
-    if (item.roadmap) {
+    if (item.roadmap && item.roadmap.resume_id === selectedResumeId) {
       setOpenItem(item);
       return;
     }
     setBusyId(item.id);
     try {
-      const rm = await buildRoadmap({ data: { itemId: item.id } });
+      const rm = await buildRoadmap({ data: { itemId: item.id, resumeId: selectedResumeId || undefined } });
       const updated = { ...item, roadmap: rm };
       setOpenItem(updated);
       qc.invalidateQueries({ queryKey: ["learning"] });
@@ -119,13 +284,55 @@ function Learning() {
 
   return (
     <CandidateShell eyebrow="Skills to grow" title="Learning Roadmap">
+
+      {/* Target Resume selector — Apply and New task in one compact row */}
+      <div className="glass rounded-2xl px-4 py-3 mb-6 flex flex-wrap items-center gap-2 border border-border/20">
+        <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground shrink-0">
+          Target Resume context:
+        </Label>
+        {resumes?.length ? (
+          <Select value={selectedResumeId} onValueChange={setSelectedResumeId}>
+            <SelectTrigger className="w-[200px] sm:w-[240px] bg-background/40 backdrop-blur-md border border-border/60 rounded-full h-9 px-4 text-sm">
+              <SelectValue placeholder="Select resume" />
+            </SelectTrigger>
+            <SelectContent>
+              {resumes.map((r) => (
+                <SelectItem key={r.id} value={r.id}>
+                  {r.title} {r.is_primary ? "(Primary)" : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : (
+          <span className="text-xs text-yellow-500">No resumes found.</span>
+        )}
+        <Button
+          variant="secondary"
+          size="sm"
+          className="rounded-full h-9 px-4 border border-border/60 hover:bg-secondary/60 transition-all font-medium text-xs flex items-center gap-1.5 shrink-0"
+          onClick={applyResumeContext}
+          disabled={applying || !selectedResumeId}
+        >
+          {applying ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+          ) : (
+            <Sparkles className="h-3.5 w-3.5 text-primary" />
+          )}
+          Apply
+        </Button>
+        <Button
+          size="sm"
+          className="rounded-full h-9 px-4 ml-auto flex items-center gap-1.5"
+          onClick={() => setAddOpen(true)}
+        >
+          <Plus className="h-4 w-4" /> New task
+        </Button>
+      </div>
+
       <div className="mb-4 flex items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
           Tasks seeded from interview gaps and resume analysis. Add your own anytime.
         </p>
-        <Button size="sm" className="rounded-full" onClick={() => setAddOpen(true)}>
-          <Plus className="mr-1.5 h-4 w-4" /> New task
-        </Button>
       </div>
 
       {!items?.length ? (
@@ -137,13 +344,28 @@ function Learning() {
           </p>
         </div>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
           {(["todo", "in_progress", "done"] as const).map((col) => (
             <div key={col} className="glass rounded-2xl p-6">
-              <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                {col === "todo" ? "To do" : col === "in_progress" ? "In progress" : "Done"}
-              </p>
-              <p className="mt-1 font-display text-3xl">{grouped[col].length}</p>
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                    {col === "todo" ? "To do" : col === "in_progress" ? "In progress" : "Done"}
+                  </p>
+                  <p className="mt-1 font-display text-3xl">{grouped[col].length}</p>
+                </div>
+                {grouped[col].length > 0 && (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    title={`Delete all ${col === "todo" ? "To Do" : col === "in_progress" ? "In Progress" : "Done"} items`}
+                    onClick={() => deleteAllInColumn(col)}
+                    className="mt-1 h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+              </div>
               <ul className="mt-4 space-y-2">
                 {grouped[col].map((i) => (
                   <li key={i.id} className="rounded-xl border border-border/60 p-3">
@@ -179,15 +401,6 @@ function Learning() {
                         >
                           <CheckCircle2 className="h-4 w-4" />
                         </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          title="Delete"
-                          onClick={() => removeItem(i.id)}
-                          className="text-muted-foreground hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
                       </div>
                     </div>
                     {i.source_session_id && (
@@ -195,20 +408,55 @@ function Learning() {
                         From interview gap
                       </p>
                     )}
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="mt-2 w-full rounded-full"
-                      onClick={() => openRoadmap(i)}
-                      disabled={busyId === i.id}
-                    >
-                      {busyId === i.id ? (
-                        <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <Map className="mr-2 h-3.5 w-3.5" />
-                      )}
-                      {i.roadmap ? "View roadmap" : "Generate roadmap"}
-                    </Button>
+                    {i.roadmap ? (
+                      <div className="flex flex-wrap gap-2 mt-2 w-full">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex-1 min-w-[100px] rounded-full text-xs"
+                          onClick={() => openRoadmap(i)}
+                          disabled={busyId === i.id}
+                        >
+                          <Map className="mr-1.5 h-3.5 w-3.5" />
+                          View roadmap
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="rounded-full h-8 w-8 p-0 text-muted-foreground hover:text-primary shrink-0 border border-border/60 hover:bg-secondary/40"
+                          title="Regenerate with current resume"
+                          onClick={() => forceGenerateRoadmap(i.id)}
+                          disabled={busyId === i.id}
+                        >
+                          <RefreshCw className={`h-3.5 w-3.5 ${busyId === i.id ? "animate-spin" : ""}`} />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="rounded-full h-8 w-8 p-0 text-muted-foreground hover:text-destructive shrink-0 border border-border/60 hover:bg-destructive/10"
+                          title="Delete roadmap"
+                          onClick={() => deleteRoadmap(i.id)}
+                          disabled={busyId === i.id}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="mt-2 w-full rounded-full text-xs"
+                        onClick={() => openRoadmap(i)}
+                        disabled={busyId === i.id}
+                      >
+                        {busyId === i.id ? (
+                          <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Sparkles className="mr-1.5 h-3.5 w-3.5 text-primary" />
+                        )}
+                        Generate roadmap
+                      </Button>
+                    )}
                   </li>
                 ))}
                 {grouped[col].length === 0 && (
@@ -273,6 +521,11 @@ function Learning() {
           {openItem?.roadmap && (
             <>
               <DialogHeader>
+                <div className="flex items-center gap-2 mb-1">
+                  <Badge variant="outline" className="text-[10px] uppercase tracking-wider rounded-full border-primary/40 text-primary bg-primary/5 px-2 py-0.5">
+                    Tailored with: {resumes?.find(r => r.id === openItem.roadmap.resume_id)?.title || "Default Context"}
+                  </Badge>
+                </div>
                 <DialogTitle className="font-display text-2xl">
                   {openItem.roadmap.skill} — Learning Roadmap
                 </DialogTitle>
@@ -460,6 +713,26 @@ function Learning() {
                   <p className="text-sm">{openItem.roadmap.final_capstone}</p>
                 </div>
               )}
+
+              <DialogFooter className="border-t border-border/40 pt-4 mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="text-xs text-muted-foreground text-left w-full sm:w-auto">
+                  Target Resume: <span className="font-semibold text-foreground">{resumes?.find((r) => r.id === selectedResumeId)?.title || "Default Profile"}</span>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => forceGenerateRoadmap(openItem.id)}
+                  disabled={busyId === openItem.id}
+                  className="rounded-full shrink-0 w-full sm:w-auto"
+                >
+                  {busyId === openItem.id ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="mr-2 h-4 w-4 text-primary" />
+                  )}
+                  Regenerate Roadmap
+                </Button>
+              </DialogFooter>
             </>
           )}
         </DialogContent>

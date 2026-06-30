@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Bot, Plus, Play, Download } from "lucide-react";
+import { ArrowLeft, Bot, Loader2, Send, PartyPopper, Download, LayoutDashboard, Trash2, Plus, Play } from "lucide-react";
 import { CandidateShell } from "@/components/CandidateShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -94,6 +94,7 @@ function InterviewsList() {
   const [jd, setJd] = useState("");
   const [open, setOpen] = useState(false);
   const [exportingId, setExportingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const { data: sessions } = useQuery({
     queryKey: ["interviews"],
@@ -144,6 +145,19 @@ function InterviewsList() {
       toast.error(e.message ?? "Export failed");
     }
     setExportingId(null);
+  }
+
+  async function handleDelete(id: string) {
+    setDeletingId(id);
+    try {
+      const { error } = await supabase.from('interview_sessions').delete().eq('id', id);
+      if (error) throw error;
+      qc.invalidateQueries({ queryKey: ['interviews'] });
+      toast.success('Session deleted');
+    } catch (e: any) {
+      toast.error(e.message ?? 'Delete failed');
+    }
+    setDeletingId(null);
   }
 
   return (
@@ -322,18 +336,30 @@ function InterviewsList() {
                   </div>
                 </div>
               </Link>
-              {s.status === "completed" && (
+              <div className="flex flex-col sm:flex-row gap-2 mt-4 w-full">
+                {s.status === "completed" && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-grow flex-shrink min-w-0 rounded-full text-xs"
+                    disabled={exportingId === s.id}
+                    onClick={() => handleExport(s.id)}
+                  >
+                    <Download className="mr-1.5 h-3.5 w-3.5 shrink-0" />
+                    <span className="truncate">{exportingId === s.id ? "Exporting…" : "Export PDF"}</span>
+                  </Button>
+                )}
                 <Button
                   size="sm"
-                  variant="outline"
-                  className="mt-3 w-full rounded-full"
-                  disabled={exportingId === s.id}
-                  onClick={() => handleExport(s.id)}
+                  variant="destructive"
+                  className="flex-grow flex-shrink min-w-0 rounded-full text-xs"
+                  disabled={deletingId === s.id}
+                  onClick={() => handleDelete(s.id)}
                 >
-                  <Download className="mr-2 h-3.5 w-3.5" />
-                  {exportingId === s.id ? "Exporting…" : "Export PDF report"}
+                  <Trash2 className="mr-1.5 h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">{deletingId === s.id ? "Deleting…" : "Delete"}</span>
                 </Button>
-              )}
+              </div>
             </div>
           );
         })}
