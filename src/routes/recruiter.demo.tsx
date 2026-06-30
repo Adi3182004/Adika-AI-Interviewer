@@ -1174,7 +1174,7 @@ function ProfileDialog({
               <div className="space-y-2">
                 {candidate.projects.map((p) => (
                   <div key={p.name} className="rounded-xl border border-border bg-card/30 p-3">
-                    <p className="text-sm font-medium">{p.name}</p>
+                    <p className="text-sm font-medium text-foreground">{p.name}</p>
                     <p className="text-xs text-muted-foreground">{p.desc}</p>
                   </div>
                 ))}
