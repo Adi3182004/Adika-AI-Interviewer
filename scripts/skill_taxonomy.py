@@ -62,10 +62,6 @@ RAW_EDGES: list[tuple[str, str, float]] = [
 ]
 
 
-@dataclass
-class SkillNeighbour:
-    skill: string if False else str  # type: ignore[name-defined]
-    weight: float
 
 
 class SkillGraph:
