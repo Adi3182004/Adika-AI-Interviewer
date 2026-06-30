@@ -1247,8 +1247,8 @@ function Info({ icon: Icon, label, value }: { icon: typeof Mail; label: string; 
     <div className="flex items-start gap-2 rounded-xl border border-border bg-card/30 p-3">
       <Icon className="mt-0.5 h-4 w-4 text-gold" />
       <div className="min-w-0">
-        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
-        <p className="truncate text-sm">{value}</p>
+        <p className="text-[10px] uppercase tracking-wider text-gold/70">{label}</p>
+        <p className="truncate text-sm text-foreground">{value}</p>
       </div>
     </div>
   );
