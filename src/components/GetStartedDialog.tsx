@@ -1,6 +1,13 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, Building2, UserRound } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
 export function GetStartedDialog({ trigger }: { trigger: React.ReactNode }) {
@@ -10,8 +17,12 @@ export function GetStartedDialog({ trigger }: { trigger: React.ReactNode }) {
       <DialogContent className="max-w-3xl rounded-3xl p-0 overflow-hidden">
         <div className="p-8">
           <DialogHeader>
-            <DialogTitle className="font-display text-3xl">Choose how you want to start</DialogTitle>
-            <DialogDescription>One intelligence layer — two tailored experiences.</DialogDescription>
+            <DialogTitle className="font-display text-3xl">
+              Choose how you want to start
+            </DialogTitle>
+            <DialogDescription>
+              One intelligence layer — two tailored experiences.
+            </DialogDescription>
           </DialogHeader>
 
           <div className="mt-8 grid gap-5 md:grid-cols-2">
@@ -36,7 +47,11 @@ export function GetStartedDialog({ trigger }: { trigger: React.ReactNode }) {
                   </Button>
                 </Link>
                 <Link to="/auth" search={{ role: "candidate", mode: "login" }}>
-                  <Button size="lg" variant="outline" className="w-full justify-between rounded-full">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="w-full justify-between rounded-full"
+                  >
                     Login <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
@@ -59,12 +74,19 @@ export function GetStartedDialog({ trigger }: { trigger: React.ReactNode }) {
               </p>
               <div className="mt-6 grid gap-2">
                 <Link to="/auth" search={{ role: "recruiter", mode: "register" }}>
-                  <Button size="lg" className="w-full justify-between rounded-full bg-white text-[#0a0816] hover:bg-white/90">
+                  <Button
+                    size="lg"
+                    className="w-full justify-between rounded-full bg-white text-[#0a0816] hover:bg-white/90"
+                  >
                     Register as recruiter <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
                 <Link to="/auth" search={{ role: "recruiter", mode: "login" }}>
-                  <Button size="lg" variant="outline" className="w-full justify-between rounded-full border-white/25 bg-transparent text-white hover:bg-white/10">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="w-full justify-between rounded-full border-white/25 bg-transparent text-white hover:bg-white/10"
+                  >
                     Login <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>

@@ -1,8 +1,18 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { type ReactNode } from "react";
 import {
-  LayoutDashboard, FileText, Briefcase, Bot, GraduationCap, UserCircle2, LogOut, Menu,
-  Wand2, Telescope, Building2, Target,
+  LayoutDashboard,
+  FileText,
+  Briefcase,
+  Bot,
+  GraduationCap,
+  UserCircle2,
+  LogOut,
+  Menu,
+  Wand2,
+  Telescope,
+  Building2,
+  Target,
 } from "lucide-react";
 import { MeshBackground } from "@/components/MeshBackground";
 import { Button } from "@/components/ui/button";
@@ -24,7 +34,15 @@ const nav: Array<{ to: string; label: string; icon: typeof LayoutDashboard; exac
   { to: "/candidate/profile", label: "Profile", icon: UserCircle2 },
 ];
 
-export function CandidateShell({ children, title, eyebrow }: { children: ReactNode; title?: string; eyebrow?: string }) {
+export function CandidateShell({
+  children,
+  title,
+  eyebrow,
+}: {
+  children: ReactNode;
+  title?: string;
+  eyebrow?: string;
+}) {
   const navigate = useNavigate();
   const path = useRouterState({ select: (s) => s.location.pathname });
 
@@ -37,22 +55,35 @@ export function CandidateShell({ children, title, eyebrow }: { children: ReactNo
   const SideNav = () => (
     <nav className="flex h-full flex-col gap-1 p-4">
       <Link to="/" className="mb-6 flex items-center gap-2 px-2">
-        <span className="grid h-9 w-9 place-items-center rounded-xl bg-foreground text-background font-display">A</span>
+        <span className="grid h-9 w-9 place-items-center rounded-xl bg-foreground text-background font-display">
+          A
+        </span>
         <span className="font-display text-lg">Candidate</span>
       </Link>
       {nav.map((item) => {
         const active = item.exact ? path === item.to : path.startsWith(item.to);
         return (
-          <Link key={item.to} to={item.to}
+          <Link
+            key={item.to}
+            to={item.to}
             className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition ${
-              active ? "bg-primary/15 text-foreground font-medium" : "text-muted-foreground hover:bg-accent/40 hover:text-foreground"
-            }`}>
-            <item.icon className="h-4 w-4" />{item.label}
+              active
+                ? "bg-primary/15 text-foreground font-medium"
+                : "text-muted-foreground hover:bg-accent/40 hover:text-foreground"
+            }`}
+          >
+            <item.icon className="h-4 w-4" />
+            {item.label}
           </Link>
         );
       })}
       <div className="mt-auto">
-        <Button variant="ghost" size="sm" onClick={logout} className="w-full justify-start text-muted-foreground hover:text-foreground">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={logout}
+          className="w-full justify-start text-muted-foreground hover:text-foreground"
+        >
           <LogOut className="mr-2 h-4 w-4" /> Sign out
         </Button>
       </div>
@@ -71,11 +102,19 @@ export function CandidateShell({ children, title, eyebrow }: { children: ReactNo
             <div className="flex items-center gap-3">
               <Sheet>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="md:hidden"><Menu className="h-5 w-5" /></Button>
+                  <Button variant="ghost" size="icon" className="md:hidden">
+                    <Menu className="h-5 w-5" />
+                  </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="p-0 w-64"><SideNav /></SheetContent>
+                <SheetContent side="left" className="p-0 w-64">
+                  <SideNav />
+                </SheetContent>
               </Sheet>
-              {eyebrow && <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">{eyebrow}</p>}
+              {eyebrow && (
+                <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
+                  {eyebrow}
+                </p>
+              )}
             </div>
             <NotificationBell />
           </header>

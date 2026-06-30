@@ -33,7 +33,9 @@ function AcceptInvite() {
         setState("error");
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [token, accept]);
 
   return (
@@ -49,8 +51,13 @@ function AcceptInvite() {
           <>
             <CheckCircle2 className="mx-auto h-10 w-10 text-emerald-500" />
             <h1 className="mt-4 font-display text-2xl">You're in</h1>
-            <p className="mt-2 text-sm text-muted-foreground">You now have access to <span className="text-gold">{teamName}</span>'s jobs, candidates, and interview replays.</p>
-            <Button className="mt-6 rounded-full" onClick={() => navigate({ to: "/recruiter" })}>Go to recruiter dashboard</Button>
+            <p className="mt-2 text-sm text-muted-foreground">
+              You now have access to <span className="text-gold">{teamName}</span>'s jobs,
+              candidates, and interview replays.
+            </p>
+            <Button className="mt-6 rounded-full" onClick={() => navigate({ to: "/recruiter" })}>
+              Go to recruiter dashboard
+            </Button>
           </>
         )}
         {state === "error" && (
@@ -58,7 +65,13 @@ function AcceptInvite() {
             <AlertCircle className="mx-auto h-10 w-10 text-rose-500" />
             <h1 className="mt-4 font-display text-2xl">Invite unavailable</h1>
             <p className="mt-2 text-sm text-muted-foreground">{message}</p>
-            <Button variant="outline" className="mt-6 rounded-full" onClick={() => navigate({ to: "/" })}>Back to home</Button>
+            <Button
+              variant="outline"
+              className="mt-6 rounded-full"
+              onClick={() => navigate({ to: "/" })}
+            >
+              Back to home
+            </Button>
           </>
         )}
       </div>

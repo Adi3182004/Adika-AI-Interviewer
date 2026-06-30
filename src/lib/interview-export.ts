@@ -29,7 +29,11 @@ export async function exportInterviewReport(sessionId: string) {
       y = MARGIN;
     }
   }
-  function text(t: string, size: number, opts: { bold?: boolean; color?: [number, number, number]; gap?: number } = {}) {
+  function text(
+    t: string,
+    size: number,
+    opts: { bold?: boolean; color?: [number, number, number]; gap?: number } = {},
+  ) {
     doc.setFontSize(size);
     doc.setFont("helvetica", opts.bold ? "bold" : "normal");
     doc.setTextColor(...(opts.color ?? [20, 20, 20]));
@@ -49,11 +53,10 @@ export async function exportInterviewReport(sessionId: string) {
   text("Adika AI — Interview Report", 22, { bold: true, gap: 6 });
   const company = (session as any).company as string | null;
   const exp = (session as any).experience_level as string | null;
-  text(
-    `${session.role_target}${company ? ` · ${company}` : ""}${exp ? ` · ${exp}` : ""}`,
-    12,
-    { color: [110, 110, 110], gap: 2 },
-  );
+  text(`${session.role_target}${company ? ` · ${company}` : ""}${exp ? ` · ${exp}` : ""}`, 12, {
+    color: [110, 110, 110],
+    gap: 2,
+  });
   text(new Date(session.created_at).toLocaleString(), 10, { color: [140, 140, 140], gap: 10 });
   rule();
 
@@ -119,6 +122,8 @@ export async function exportInterviewReport(sessionId: string) {
     doc.text(`Adika AI · Page ${p}/${pages}`, PAGE_W / 2, PAGE_H - 20, { align: "center" });
   }
 
-  const safe = `${session.role_target}-${company ?? "session"}`.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
+  const safe = `${session.role_target}-${company ?? "session"}`
+    .replace(/[^a-z0-9]+/gi, "-")
+    .toLowerCase();
   doc.save(`adika-interview-${safe}-${sessionId.slice(0, 8)}.pdf`);
 }

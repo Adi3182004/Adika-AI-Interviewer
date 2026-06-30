@@ -1,18 +1,55 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  ArrowLeft, Filter, Search, Star, GitCompare, MessageSquare, Briefcase,
-  LineChart as LineChartIcon, KanbanSquare, Play, Pause, ArrowRight,
-  ArrowLeft as ArrowLeftIcon, Check, X, UserCheck, Archive, RotateCcw,
-  Trash2, Heart, Mail, MapPin, GraduationCap, FileText, Calendar, User as UserIcon,
-  Sparkles, Languages, Trophy, ChevronDown, ChevronUp, Building2, Clock, TrendingUp,
+  ArrowLeft,
+  Filter,
+  Search,
+  Star,
+  GitCompare,
+  MessageSquare,
+  Briefcase,
+  LineChart as LineChartIcon,
+  KanbanSquare,
+  Play,
+  Pause,
+  ArrowRight,
+  ArrowLeft as ArrowLeftIcon,
+  Check,
+  X,
+  UserCheck,
+  Archive,
+  RotateCcw,
+  Trash2,
+  Heart,
+  Mail,
+  MapPin,
+  GraduationCap,
+  FileText,
+  Calendar,
+  User as UserIcon,
+  Sparkles,
+  Languages,
+  Trophy,
+  ChevronDown,
+  ChevronUp,
+  Building2,
+  Clock,
+  TrendingUp,
+  Menu,
 } from "lucide-react";
 import { MeshBackground } from "@/components/MeshBackground";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/recruiter/demo")({
@@ -53,18 +90,35 @@ type Candidate = {
 
 const candidates: Candidate[] = [
   {
-    id: "c1", name: "Priya Nair", role: "Senior AI Engineer", match: 94, skills: ["PyTorch", "RAG", "Kubernetes"],
-    readiness: 91, location: "Bengaluru", ats: 92, comm: 88, tech: 94, problem: 90,
-    experience: "6y · ex-Stripe", learning: 28, interviews: 7,
+    id: "c1",
+    name: "Priya Nair",
+    role: "Senior AI Engineer",
+    match: 94,
+    skills: ["PyTorch", "RAG", "Kubernetes"],
+    readiness: 91,
+    location: "Bengaluru",
+    ats: 92,
+    comm: 88,
+    tech: 94,
+    problem: 90,
+    experience: "6y · ex-Stripe",
+    learning: 28,
+    interviews: 7,
     highlight: "Strong system design + ML depth. RAG pipeline at scale.",
-    age: 29, gender: "Female", email: "priya.nair@example.com", phone: "+91 98xxxx2210",
+    age: 29,
+    gender: "Female",
+    email: "priya.nair@example.com",
+    phone: "+91 98xxxx2210",
     appliedFor: "Senior AI Engineer",
     qualifications: ["B.Tech Computer Science, IIT Bombay", "M.S. Machine Learning, Stanford"],
     certifications: ["AWS ML Specialty", "GCP Professional ML Engineer"],
     languages: ["English (Native)", "Hindi (Native)", "Kannada (Fluent)"],
     hobbies: ["Long-distance running", "Open-source contributing", "Classical music"],
     projects: [
-      { name: "RAG Search at Stripe", desc: "Cut support resolution time 38% with retrieval-augmented LLM workflow." },
+      {
+        name: "RAG Search at Stripe",
+        desc: "Cut support resolution time 38% with retrieval-augmented LLM workflow.",
+      },
       { name: "Kube-Autoscaler", desc: "OSS HPA replacement using time-series forecasting." },
     ],
     resumeBullets: [
@@ -72,14 +126,32 @@ const candidates: Candidate[] = [
       "Designed RAG pipeline serving 12M monthly queries with p95 < 220ms.",
       "Reduced GPU spend 27% via batched inference + INT8 quantization.",
     ],
-    extracted: { years: 6, pastCompanies: ["Stripe", "Atlassian"], topSkills: ["PyTorch", "RAG", "Kubernetes", "Python", "AWS"] },
+    extracted: {
+      years: 6,
+      pastCompanies: ["Stripe", "Atlassian"],
+      topSkills: ["PyTorch", "RAG", "Kubernetes", "Python", "AWS"],
+    },
   },
   {
-    id: "c2", name: "Marcus Reed", role: "Backend Engineer", match: 88, skills: ["Go", "Postgres", "Kafka"],
-    readiness: 84, location: "Berlin", ats: 90, comm: 82, tech: 88, problem: 86,
-    experience: "5y · ex-Datadog", learning: 19, interviews: 6,
+    id: "c2",
+    name: "Marcus Reed",
+    role: "Backend Engineer",
+    match: 88,
+    skills: ["Go", "Postgres", "Kafka"],
+    readiness: 84,
+    location: "Berlin",
+    ats: 90,
+    comm: 82,
+    tech: 88,
+    problem: 86,
+    experience: "5y · ex-Datadog",
+    learning: 19,
+    interviews: 6,
     highlight: "Event-driven systems. Built 50k events/sec ingestor.",
-    age: 31, gender: "Male", email: "marcus.reed@example.com", phone: "+49 30xxxx88",
+    age: 31,
+    gender: "Male",
+    email: "marcus.reed@example.com",
+    phone: "+49 30xxxx88",
     appliedFor: "Backend Engineer (Go)",
     qualifications: ["B.Sc. Computer Science, TU Berlin"],
     certifications: ["CKA — Certified Kubernetes Administrator"],
@@ -94,14 +166,32 @@ const candidates: Candidate[] = [
       "Mentored 4 juniors; introduced load-test gate in CI.",
       "Speaker at GopherCon 2024 on concurrency patterns.",
     ],
-    extracted: { years: 5, pastCompanies: ["Datadog", "N26"], topSkills: ["Go", "Postgres", "Kafka", "Redis", "Terraform"] },
+    extracted: {
+      years: 5,
+      pastCompanies: ["Datadog", "N26"],
+      topSkills: ["Go", "Postgres", "Kafka", "Redis", "Terraform"],
+    },
   },
   {
-    id: "c3", name: "Ana Silva", role: "Full Stack Engineer", match: 81, skills: ["React", "Node", "AWS"],
-    readiness: 78, location: "São Paulo", ats: 83, comm: 84, tech: 79, problem: 78,
-    experience: "4y · ex-Nubank", learning: 22, interviews: 5,
+    id: "c3",
+    name: "Ana Silva",
+    role: "Full Stack Engineer",
+    match: 81,
+    skills: ["React", "Node", "AWS"],
+    readiness: 78,
+    location: "São Paulo",
+    ats: 83,
+    comm: 84,
+    tech: 79,
+    problem: 78,
+    experience: "4y · ex-Nubank",
+    learning: 22,
+    interviews: 5,
     highlight: "Product-minded full stack. Strong customer empathy.",
-    age: 27, gender: "Female", email: "ana.silva@example.com", phone: "+55 11xxxx55",
+    age: 27,
+    gender: "Female",
+    email: "ana.silva@example.com",
+    phone: "+55 11xxxx55",
     appliedFor: "Full Stack Engineer",
     qualifications: ["B.Eng Software Engineering, USP"],
     certifications: ["AWS Solutions Architect Associate"],
@@ -116,14 +206,32 @@ const candidates: Candidate[] = [
       "Led migration from monolith → microservices for auth.",
       "Mentor at Reprograma (women in tech NGO).",
     ],
-    extracted: { years: 4, pastCompanies: ["Nubank", "iFood"], topSkills: ["React", "Node", "AWS", "TypeScript", "GraphQL"] },
+    extracted: {
+      years: 4,
+      pastCompanies: ["Nubank", "iFood"],
+      topSkills: ["React", "Node", "AWS", "TypeScript", "GraphQL"],
+    },
   },
   {
-    id: "c4", name: "Daniel Cho", role: "ML Engineer", match: 79, skills: ["MLflow", "Spark", "GCP"],
-    readiness: 80, location: "Seoul", ats: 85, comm: 74, tech: 82, problem: 80,
-    experience: "5y · ex-Naver", learning: 16, interviews: 4,
+    id: "c4",
+    name: "Daniel Cho",
+    role: "ML Engineer",
+    match: 79,
+    skills: ["MLflow", "Spark", "GCP"],
+    readiness: 80,
+    location: "Seoul",
+    ats: 85,
+    comm: 74,
+    tech: 82,
+    problem: 80,
+    experience: "5y · ex-Naver",
+    learning: 16,
+    interviews: 4,
     highlight: "MLOps depth. Owned end-to-end model lifecycle.",
-    age: 30, gender: "Male", email: "daniel.cho@example.com", phone: "+82 10xxxx77",
+    age: 30,
+    gender: "Male",
+    email: "daniel.cho@example.com",
+    phone: "+82 10xxxx77",
     appliedFor: "Senior AI Engineer",
     qualifications: ["B.S. CS, KAIST", "M.S. Data Science, SNU"],
     certifications: ["GCP Professional Data Engineer", "Databricks Certified ML"],
@@ -138,14 +246,32 @@ const candidates: Candidate[] = [
       "Built feature monitoring; cut drift incidents 60%.",
       "Authored internal MLOps playbook used by 40+ engineers.",
     ],
-    extracted: { years: 5, pastCompanies: ["Naver", "Kakao"], topSkills: ["MLflow", "Spark", "GCP", "Python", "Airflow"] },
+    extracted: {
+      years: 5,
+      pastCompanies: ["Naver", "Kakao"],
+      topSkills: ["MLflow", "Spark", "GCP", "Python", "Airflow"],
+    },
   },
   {
-    id: "c5", name: "Sara Okonkwo", role: "Data Engineer", match: 76, skills: ["dbt", "Snowflake", "Airflow"],
-    readiness: 72, location: "Lagos", ats: 78, comm: 80, tech: 76, problem: 72,
-    experience: "3y · ex-Flutterwave", learning: 14, interviews: 3,
+    id: "c5",
+    name: "Sara Okonkwo",
+    role: "Data Engineer",
+    match: 76,
+    skills: ["dbt", "Snowflake", "Airflow"],
+    readiness: 72,
+    location: "Lagos",
+    ats: 78,
+    comm: 80,
+    tech: 76,
+    problem: 72,
+    experience: "3y · ex-Flutterwave",
+    learning: 14,
+    interviews: 3,
     highlight: "Modern data stack expert. Clean modeling instincts.",
-    age: 26, gender: "Female", email: "sara.okonkwo@example.com", phone: "+234 80xxxx12",
+    age: 26,
+    gender: "Female",
+    email: "sara.okonkwo@example.com",
+    phone: "+234 80xxxx12",
     appliedFor: "Staff Data Engineer",
     qualifications: ["B.Sc. Statistics, University of Lagos"],
     certifications: ["dbt Analytics Engineer", "Snowflake SnowPro Core"],
@@ -160,14 +286,32 @@ const candidates: Candidate[] = [
       "Cut Snowflake spend 22% via warehouse right-sizing.",
       "Founded LagosData meetup (600+ members).",
     ],
-    extracted: { years: 3, pastCompanies: ["Flutterwave", "Andela"], topSkills: ["dbt", "Snowflake", "Airflow", "SQL", "Python"] },
+    extracted: {
+      years: 3,
+      pastCompanies: ["Flutterwave", "Andela"],
+      topSkills: ["dbt", "Snowflake", "Airflow", "SQL", "Python"],
+    },
   },
   {
-    id: "c6", name: "Leo Martin", role: "DevOps Engineer", match: 73, skills: ["Terraform", "K8s", "Argo"],
-    readiness: 70, location: "Toronto", ats: 80, comm: 70, tech: 75, problem: 72,
-    experience: "4y · ex-Shopify", learning: 11, interviews: 3,
+    id: "c6",
+    name: "Leo Martin",
+    role: "DevOps Engineer",
+    match: 73,
+    skills: ["Terraform", "K8s", "Argo"],
+    readiness: 70,
+    location: "Toronto",
+    ats: 80,
+    comm: 70,
+    tech: 75,
+    problem: 72,
+    experience: "4y · ex-Shopify",
+    learning: 11,
+    interviews: 3,
     highlight: "Platform reliability. Cost optimization wins.",
-    age: 32, gender: "Male", email: "leo.martin@example.com", phone: "+1 416xxxx04",
+    age: 32,
+    gender: "Male",
+    email: "leo.martin@example.com",
+    phone: "+1 416xxxx04",
     appliedFor: "Backend Engineer (Go)",
     qualifications: ["B.Eng Software Engineering, University of Waterloo"],
     certifications: ["CKA", "HashiCorp Terraform Associate"],
@@ -182,7 +326,11 @@ const candidates: Candidate[] = [
       "Built GitOps pipeline with Argo CD across 3 regions.",
       "Authored Shopify's internal SRE handbook.",
     ],
-    extracted: { years: 4, pastCompanies: ["Shopify", "RBC"], topSkills: ["Terraform", "K8s", "Argo", "AWS", "Go"] },
+    extracted: {
+      years: 4,
+      pastCompanies: ["Shopify", "RBC"],
+      topSkills: ["Terraform", "K8s", "Argo", "AWS", "Go"],
+    },
   },
 ];
 
@@ -219,15 +367,38 @@ const INITIAL_PIPELINE: PipeCard[] = [
   { id: "p18", name: "Neel Bhatia", role: "DevOps Engineer", match: 86, stage: "offer" },
 ];
 
-type Job = { id: string; title: string; applicants: number; stage: "Open" | "Draft"; topMatchIds: string[] };
+type Job = {
+  id: string;
+  title: string;
+  applicants: number;
+  stage: "Open" | "Draft";
+  topMatchIds: string[];
+};
 const jobs: Job[] = [
-  { id: "j1", title: "Senior AI Engineer", applicants: 64, stage: "Open", topMatchIds: ["c1", "c4"] },
-  { id: "j2", title: "Backend Engineer (Go)", applicants: 48, stage: "Open", topMatchIds: ["c2", "c6"] },
+  {
+    id: "j1",
+    title: "Senior AI Engineer",
+    applicants: 64,
+    stage: "Open",
+    topMatchIds: ["c1", "c4"],
+  },
+  {
+    id: "j2",
+    title: "Backend Engineer (Go)",
+    applicants: 48,
+    stage: "Open",
+    topMatchIds: ["c2", "c6"],
+  },
   { id: "j3", title: "Staff Data Engineer", applicants: 27, stage: "Draft", topMatchIds: ["c5"] },
 ];
 
 type ReplaySession = {
-  id: string; candidateId: string; role: string; company: string; duration: string; date: string;
+  id: string;
+  candidateId: string;
+  role: string;
+  company: string;
+  duration: string;
+  date: string;
   scores: { tech: number; comm: number; problem: number; readiness: number };
   signals: { typingSpeed: string; pasteRatio: string; aiLikelihood: string; sentiment: string };
   transcript: { who: "AI" | "Candidate"; text: string; analysis?: string }[];
@@ -235,45 +406,121 @@ type ReplaySession = {
 
 const replays: ReplaySession[] = [
   {
-    id: "r1", candidateId: "c2", role: "Backend Engineer (Go)", company: "Adika AI", duration: "38 min", date: "Jun 24, 2026",
+    id: "r1",
+    candidateId: "c2",
+    role: "Backend Engineer (Go)",
+    company: "Adika AI",
+    duration: "38 min",
+    date: "Jun 24, 2026",
     scores: { tech: 88, comm: 82, problem: 86, readiness: 84 },
-    signals: { typingSpeed: "72 WPM", pasteRatio: "4%", aiLikelihood: "Low (8%)", sentiment: "Confident" },
+    signals: {
+      typingSpeed: "72 WPM",
+      pasteRatio: "4%",
+      aiLikelihood: "Low (8%)",
+      sentiment: "Confident",
+    },
     transcript: [
-      { who: "AI", text: "Walk me through how you'd design a rate-limited webhook ingestor for 50K events / sec." },
-      { who: "Candidate", text: "I'd front it with a stateless ingest layer behind a load balancer, use token-bucket rate limiting per source, then push to Kafka with idempotency keys…", analysis: "Strong opener — names concrete primitives (token bucket, idempotency keys). Structures answer top-down." },
-      { who: "AI", text: "Good. How do you guarantee at-least-once delivery without duplicate side effects downstream?" },
-      { who: "Candidate", text: "Consumers track processed message IDs in a fast KV (Redis with TTL) and the downstream side effects are idempotent by event_id.", analysis: "Correct pattern; explicitly distinguishes delivery semantics from side-effect semantics." },
+      {
+        who: "AI",
+        text: "Walk me through how you'd design a rate-limited webhook ingestor for 50K events / sec.",
+      },
+      {
+        who: "Candidate",
+        text: "I'd front it with a stateless ingest layer behind a load balancer, use token-bucket rate limiting per source, then push to Kafka with idempotency keys…",
+        analysis:
+          "Strong opener — names concrete primitives (token bucket, idempotency keys). Structures answer top-down.",
+      },
+      {
+        who: "AI",
+        text: "Good. How do you guarantee at-least-once delivery without duplicate side effects downstream?",
+      },
+      {
+        who: "Candidate",
+        text: "Consumers track processed message IDs in a fast KV (Redis with TTL) and the downstream side effects are idempotent by event_id.",
+        analysis:
+          "Correct pattern; explicitly distinguishes delivery semantics from side-effect semantics.",
+      },
       { who: "AI", text: "What's your TTL strategy when retries can exceed the window?" },
-      { who: "Candidate", text: "I size TTL to 3× the worst-case retry envelope and ship dedup metrics so we catch drift early.", analysis: "Demonstrates operational maturity (alerts on dedup-hit ratio)." },
+      {
+        who: "Candidate",
+        text: "I size TTL to 3× the worst-case retry envelope and ship dedup metrics so we catch drift early.",
+        analysis: "Demonstrates operational maturity (alerts on dedup-hit ratio).",
+      },
     ],
   },
   {
-    id: "r2", candidateId: "c1", role: "Senior AI Engineer", company: "Adika AI", duration: "44 min", date: "Jun 23, 2026",
+    id: "r2",
+    candidateId: "c1",
+    role: "Senior AI Engineer",
+    company: "Adika AI",
+    duration: "44 min",
+    date: "Jun 23, 2026",
     scores: { tech: 94, comm: 88, problem: 90, readiness: 91 },
-    signals: { typingSpeed: "84 WPM", pasteRatio: "2%", aiLikelihood: "Very Low (3%)", sentiment: "Composed" },
+    signals: {
+      typingSpeed: "84 WPM",
+      pasteRatio: "2%",
+      aiLikelihood: "Very Low (3%)",
+      sentiment: "Composed",
+    },
     transcript: [
       { who: "AI", text: "How would you architect a RAG system for a 12M monthly query workload?" },
-      { who: "Candidate", text: "Hybrid retrieval — BM25 + dense vectors, reranker on top-K=50, cache embeddings per session, async chunk refresh.", analysis: "Production-grade design — names latency budget components." },
+      {
+        who: "Candidate",
+        text: "Hybrid retrieval — BM25 + dense vectors, reranker on top-K=50, cache embeddings per session, async chunk refresh.",
+        analysis: "Production-grade design — names latency budget components.",
+      },
       { who: "AI", text: "How do you evaluate hallucination rate?" },
-      { who: "Candidate", text: "I sample 200 queries weekly with a faithfulness grader (LLM-as-judge + spot human review).", analysis: "Pairs automated + human eval — recognises grader bias." },
+      {
+        who: "Candidate",
+        text: "I sample 200 queries weekly with a faithfulness grader (LLM-as-judge + spot human review).",
+        analysis: "Pairs automated + human eval — recognises grader bias.",
+      },
     ],
   },
   {
-    id: "r3", candidateId: "c3", role: "Full Stack Engineer", company: "Adika AI", duration: "31 min", date: "Jun 22, 2026",
+    id: "r3",
+    candidateId: "c3",
+    role: "Full Stack Engineer",
+    company: "Adika AI",
+    duration: "31 min",
+    date: "Jun 22, 2026",
     scores: { tech: 79, comm: 84, problem: 78, readiness: 78 },
-    signals: { typingSpeed: "68 WPM", pasteRatio: "6%", aiLikelihood: "Low (12%)", sentiment: "Warm" },
+    signals: {
+      typingSpeed: "68 WPM",
+      pasteRatio: "6%",
+      aiLikelihood: "Low (12%)",
+      sentiment: "Warm",
+    },
     transcript: [
       { who: "AI", text: "Walk me through a product experiment you owned end-to-end." },
-      { who: "Candidate", text: "Onboarding funnel at Nubank — I hypothesised that delaying KYC by one screen would lift activation. Ran 50/50 A/B, +14% in 2 weeks.", analysis: "Clear hypothesis → outcome storytelling. Names guardrail metrics implicitly." },
+      {
+        who: "Candidate",
+        text: "Onboarding funnel at Nubank — I hypothesised that delaying KYC by one screen would lift activation. Ran 50/50 A/B, +14% in 2 weeks.",
+        analysis: "Clear hypothesis → outcome storytelling. Names guardrail metrics implicitly.",
+      },
     ],
   },
   {
-    id: "r4", candidateId: "c4", role: "Senior AI Engineer", company: "Adika AI", duration: "41 min", date: "Jun 21, 2026",
+    id: "r4",
+    candidateId: "c4",
+    role: "Senior AI Engineer",
+    company: "Adika AI",
+    duration: "41 min",
+    date: "Jun 21, 2026",
     scores: { tech: 82, comm: 74, problem: 80, readiness: 80 },
-    signals: { typingSpeed: "61 WPM", pasteRatio: "9%", aiLikelihood: "Medium (28%)", sentiment: "Methodical" },
+    signals: {
+      typingSpeed: "61 WPM",
+      pasteRatio: "9%",
+      aiLikelihood: "Medium (28%)",
+      sentiment: "Methodical",
+    },
     transcript: [
       { who: "AI", text: "How do you detect feature drift in production?" },
-      { who: "Candidate", text: "PSI on training vs serving distributions, weekly cron, alerts above 0.2.", analysis: "Correct primary metric; could mention alternative tests (KS, JS divergence)." },
+      {
+        who: "Candidate",
+        text: "PSI on training vs serving distributions, weekly cron, alerts above 0.2.",
+        analysis: "Correct primary metric; could mention alternative tests (KS, JS divergence).",
+      },
     ],
   },
 ];
@@ -288,7 +535,8 @@ function RecruiterDemo() {
   const toggleShortlist = (id: string) =>
     setShortlisted((s) => {
       const n = new Set(s);
-      if (n.has(id)) n.delete(id); else n.add(id);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
       return n;
     });
 
@@ -326,74 +574,230 @@ function RecruiterDemo() {
     setArchive((a) => a.filter((c) => c.id !== id));
     setPipeline((p) => [...p, { ...card, stage: "offer" }]);
   };
-  const deleteForever = (id: string) =>
-    setArchive((a) => a.filter((c) => c.id !== id));
+  const deleteForever = (id: string) => setArchive((a) => a.filter((c) => c.id !== id));
 
   const profileCandidate = useMemo(
     () => candidates.find((c) => c.id === profileId) ?? null,
     [profileId],
   );
 
+  const renderSideNav = () => (
+    <div className="flex h-full flex-col gap-1 p-4">
+      <Link to="/" className="mb-6 flex items-center gap-2 px-2">
+        <span className="grid h-9 w-9 place-items-center rounded-xl bg-gold-soft font-display text-gold font-bold">
+          A
+        </span>
+        <span className="font-display text-lg text-gold">Recruiter Pro</span>
+      </Link>
+
+      <div className="text-[10px] font-semibold tracking-wider text-muted-foreground/60 uppercase px-3 py-2">
+        Core Pages
+      </div>
+
+      <TabsList className="flex flex-col gap-1 w-full bg-transparent p-0 h-auto items-stretch border-none shadow-none">
+        <TabsTrigger
+          value="pipeline"
+          className="flex items-center justify-start gap-3 rounded-xl px-3 py-2.5 text-sm transition data-[state=active]:bg-gold-soft data-[state=active]:text-gold text-muted-foreground hover:bg-accent/30 hover:text-foreground border-none shadow-none cursor-pointer w-full text-left"
+        >
+          <KanbanSquare className="h-4 w-4" /> Pipeline
+        </TabsTrigger>
+        <TabsTrigger
+          value="candidates"
+          className="flex items-center justify-start gap-3 rounded-xl px-3 py-2.5 text-sm transition data-[state=active]:bg-gold-soft data-[state=active]:text-gold text-muted-foreground hover:bg-accent/30 hover:text-foreground border-none shadow-none cursor-pointer w-full text-left"
+        >
+          <Search className="h-4 w-4" /> Candidates
+        </TabsTrigger>
+        <TabsTrigger
+          value="compare"
+          className="flex items-center justify-start gap-3 rounded-xl px-3 py-2.5 text-sm transition data-[state=active]:bg-gold-soft data-[state=active]:text-gold text-muted-foreground hover:bg-accent/30 hover:text-foreground border-none shadow-none cursor-pointer w-full text-left"
+        >
+          <GitCompare className="h-4 w-4" /> Compare
+        </TabsTrigger>
+        <TabsTrigger
+          value="jobs"
+          className="flex items-center justify-start gap-3 rounded-xl px-3 py-2.5 text-sm transition data-[state=active]:bg-gold-soft data-[state=active]:text-gold text-muted-foreground hover:bg-accent/30 hover:text-foreground border-none shadow-none cursor-pointer w-full text-left"
+        >
+          <Briefcase className="h-4 w-4" /> Jobs
+        </TabsTrigger>
+        <TabsTrigger
+          value="interview"
+          className="flex items-center justify-start gap-3 rounded-xl px-3 py-2.5 text-sm transition data-[state=active]:bg-gold-soft data-[state=active]:text-gold text-muted-foreground hover:bg-accent/30 hover:text-foreground border-none shadow-none cursor-pointer w-full text-left"
+        >
+          <MessageSquare className="h-4 w-4" /> Interview Replay
+        </TabsTrigger>
+        <TabsTrigger
+          value="analytics"
+          className="flex items-center justify-start gap-3 rounded-xl px-3 py-2.5 text-sm transition data-[state=active]:bg-gold-soft data-[state=active]:text-gold text-muted-foreground hover:bg-accent/30 hover:text-foreground border-none shadow-none cursor-pointer w-full text-left"
+        >
+          <LineChartIcon className="h-4 w-4" /> Analytics
+        </TabsTrigger>
+
+        <div className="h-px bg-border/20 my-4" />
+
+        <div className="text-[10px] font-semibold tracking-wider text-muted-foreground/60 uppercase px-3 py-2">
+          Shortlists & Status
+        </div>
+
+        <TabsTrigger
+          value="shortlist"
+          className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm transition data-[state=active]:bg-gold-soft data-[state=active]:text-gold text-muted-foreground hover:bg-accent/30 hover:text-foreground border-none shadow-none cursor-pointer w-full"
+        >
+          <div className="flex items-center gap-3">
+            <Heart className="h-4 w-4" /> Shortlist
+          </div>
+          <span className="rounded-full bg-gold-soft px-1.5 py-0.5 text-[10px] text-gold font-medium">
+            {shortlisted.size}
+          </span>
+        </TabsTrigger>
+        <TabsTrigger
+          value="hired"
+          className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm transition data-[state=active]:bg-gold-soft data-[state=active]:text-gold text-muted-foreground hover:bg-accent/30 hover:text-foreground border-none shadow-none cursor-pointer w-full"
+        >
+          <div className="flex items-center gap-3">
+            <UserCheck className="h-4 w-4" /> Hired
+          </div>
+          <span className="rounded-full bg-gold-soft px-1.5 py-0.5 text-[10px] text-gold font-medium">
+            {hired.length}
+          </span>
+        </TabsTrigger>
+        <TabsTrigger
+          value="archive"
+          className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm transition data-[state=active]:bg-gold-soft data-[state=active]:text-gold text-muted-foreground hover:bg-accent/30 hover:text-foreground border-none shadow-none cursor-pointer w-full"
+        >
+          <div className="flex items-center gap-3">
+            <Archive className="h-4 w-4" /> Archive
+          </div>
+          <span className="rounded-full bg-gold-soft px-1.5 py-0.5 text-[10px] text-gold font-medium">
+            {archive.length}
+          </span>
+        </TabsTrigger>
+      </TabsList>
+
+      <div className="mt-auto flex flex-col gap-2 pt-4 border-t border-border/20">
+        <span className="text-center rounded-full border border-border/40 bg-card/20 px-3 py-1 text-[11px] text-muted-foreground/80">
+          Demo Workspace
+        </span>
+        <Link to="/auth" search={{ role: "recruiter", mode: "register" }}>
+          <Button size="sm" className="w-full rounded-xl">
+            Create real account
+          </Button>
+        </Link>
+        <Link
+          to="/"
+          className="flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-3 w-3" /> Back to Home
+        </Link>
+      </div>
+    </div>
+  );
+
   return (
     <div className="recruiter relative min-h-screen text-foreground">
       <MeshBackground variant="constellation" />
 
-      <header className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-6 py-6">
-        <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-4 w-4" /> Back
-        </Link>
-        <div className="flex items-center gap-2">
-          <span className="rounded-full border border-border bg-card px-3 py-1 text-xs text-muted-foreground">Demo workspace · no signup</span>
-          <Link to="/auth" search={{ role: "recruiter", mode: "register" }}>
-            <Button size="sm" className="rounded-full">Create real account</Button>
-          </Link>
+      <Tabs defaultValue="pipeline" className="relative z-10 flex min-h-screen w-full">
+        {/* Sidebar for Desktop */}
+        <aside className="hidden w-64 shrink-0 border-r border-border/40 bg-card/30 backdrop-blur-xl md:block">
+          {renderSideNav()}
+        </aside>
+
+        {/* Main Content Area */}
+        <div className="flex min-w-0 flex-1 flex-col">
+          <header className="flex items-center justify-between border-b border-border/30 bg-card/20 px-4 py-3 md:px-8 backdrop-blur relative z-20">
+            <div className="flex items-center gap-3">
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" className="md:hidden">
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent
+                  side="left"
+                  className="recruiter p-0 w-64 bg-card/95 backdrop-blur-2xl border-r border-border/40"
+                >
+                  {renderSideNav()}
+                </SheetContent>
+              </Sheet>
+
+              <div className="flex flex-col">
+                <p className="text-[10px] uppercase tracking-[0.3em] text-gold">
+                  Recruiter Pro · Live Demo
+                </p>
+                <h1 className="font-display text-lg text-foreground md:text-xl">
+                  Adika AI Recruiter Workspace
+                </h1>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="hidden sm:inline-block rounded-full border border-border bg-card/40 px-3 py-1 text-xs text-muted-foreground">
+                Demo workspace
+              </span>
+              <Link to="/auth" search={{ role: "recruiter", mode: "register" }}>
+                <Button size="sm" className="rounded-full">
+                  Create real account
+                </Button>
+              </Link>
+            </div>
+          </header>
+
+          <main className="flex-1 px-4 py-8 md:px-10 md:py-12 relative z-10 overflow-y-auto">
+            <div className="glass rounded-3xl p-8 shadow-luxe md:p-10 mb-8">
+              <h1 className="mt-3 font-display text-4xl md:text-5xl">
+                <span className="text-gold">Calibrated</span> hiring intelligence, in one workspace.
+              </h1>
+              <p className="mt-2 max-w-2xl text-muted-foreground text-sm">
+                Browse pipeline, shortlist top talent, compare side-by-side, replay adaptive
+                interviews, and read AI-generated briefs — all backed by the same intelligence layer
+                your candidates use.
+              </p>
+            </div>
+
+            <TabsContent value="pipeline" className="mt-0">
+              <PipelineTab
+                pipeline={pipeline}
+                onAdvance={advance}
+                onBack={back}
+                onApprove={approve}
+                onReject={reject}
+              />
+            </TabsContent>
+            <TabsContent value="shortlist" className="mt-0">
+              <ShortlistTab
+                shortlisted={shortlisted}
+                onToggle={toggleShortlist}
+                onView={setProfileId}
+              />
+            </TabsContent>
+            <TabsContent value="hired" className="mt-0">
+              <HiredTab hired={hired} />
+            </TabsContent>
+            <TabsContent value="archive" className="mt-0">
+              <ArchiveTab archive={archive} onAddAgain={addAgain} onDelete={deleteForever} />
+            </TabsContent>
+            <TabsContent value="candidates" className="mt-0">
+              <CandidatesTab
+                shortlisted={shortlisted}
+                onShortlist={toggleShortlist}
+                onView={setProfileId}
+              />
+            </TabsContent>
+            <TabsContent value="compare" className="mt-0">
+              <CompareTab />
+            </TabsContent>
+            <TabsContent value="jobs" className="mt-0">
+              <JobsTab onView={setProfileId} />
+            </TabsContent>
+            <TabsContent value="interview" className="mt-0">
+              <InterviewTab />
+            </TabsContent>
+            <TabsContent value="analytics" className="mt-0">
+              <AnalyticsTab />
+            </TabsContent>
+          </main>
         </div>
-      </header>
-
-      <main className="relative z-10 mx-auto max-w-7xl px-6 pb-24">
-        <div className="glass rounded-3xl p-8 shadow-luxe md:p-10">
-          <p className="text-xs uppercase tracking-[0.3em] text-gold">Recruiter Pro · Live Demo</p>
-          <h1 className="mt-3 font-display text-4xl md:text-5xl">
-            <span className="text-gold">Calibrated</span> hiring intelligence, in one workspace.
-          </h1>
-          <p className="mt-2 max-w-2xl text-muted-foreground">
-            Browse pipeline, shortlist top talent, compare side-by-side, replay adaptive interviews, and read AI-generated briefs — all backed by the same intelligence layer your candidates use.
-          </p>
-        </div>
-
-        <Tabs defaultValue="pipeline" className="mt-8">
-          <TabsList className="flex w-full flex-wrap gap-2 rounded-2xl bg-card/40 p-1">
-            <TabsTrigger value="pipeline" className="rounded-xl data-[state=active]:bg-gold-soft data-[state=active]:text-gold"><KanbanSquare className="mr-2 h-4 w-4" /> Pipeline</TabsTrigger>
-            <TabsTrigger value="shortlist" className="rounded-xl data-[state=active]:bg-gold-soft data-[state=active]:text-gold">
-              <Heart className="mr-2 h-4 w-4" /> Shortlist
-              <span className="ml-2 rounded-full bg-gold-soft px-1.5 text-[10px] text-gold">{shortlisted.size}</span>
-            </TabsTrigger>
-            <TabsTrigger value="hired" className="rounded-xl data-[state=active]:bg-gold-soft data-[state=active]:text-gold"><UserCheck className="mr-2 h-4 w-4" /> New Employees <span className="ml-2 rounded-full bg-gold-soft px-1.5 text-[10px] text-gold">{hired.length}</span></TabsTrigger>
-            <TabsTrigger value="archive" className="rounded-xl data-[state=active]:bg-gold-soft data-[state=active]:text-gold"><Archive className="mr-2 h-4 w-4" /> Archive <span className="ml-2 rounded-full bg-gold-soft px-1.5 text-[10px] text-gold">{archive.length}</span></TabsTrigger>
-            <TabsTrigger value="candidates" className="rounded-xl data-[state=active]:bg-gold-soft data-[state=active]:text-gold"><Search className="mr-2 h-4 w-4" /> Candidates</TabsTrigger>
-            <TabsTrigger value="compare" className="rounded-xl data-[state=active]:bg-gold-soft data-[state=active]:text-gold"><GitCompare className="mr-2 h-4 w-4" /> Compare</TabsTrigger>
-            <TabsTrigger value="jobs" className="rounded-xl data-[state=active]:bg-gold-soft data-[state=active]:text-gold"><Briefcase className="mr-2 h-4 w-4" /> Jobs</TabsTrigger>
-            <TabsTrigger value="interview" className="rounded-xl data-[state=active]:bg-gold-soft data-[state=active]:text-gold"><MessageSquare className="mr-2 h-4 w-4" /> Interview Replay</TabsTrigger>
-            <TabsTrigger value="analytics" className="rounded-xl data-[state=active]:bg-gold-soft data-[state=active]:text-gold"><LineChartIcon className="mr-2 h-4 w-4" /> Analytics</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="pipeline" className="mt-6">
-            <PipelineTab pipeline={pipeline} onAdvance={advance} onBack={back} onApprove={approve} onReject={reject} />
-          </TabsContent>
-          <TabsContent value="shortlist" className="mt-6">
-            <ShortlistTab shortlisted={shortlisted} onToggle={toggleShortlist} onView={setProfileId} />
-          </TabsContent>
-          <TabsContent value="hired" className="mt-6"><HiredTab hired={hired} /></TabsContent>
-          <TabsContent value="archive" className="mt-6"><ArchiveTab archive={archive} onAddAgain={addAgain} onDelete={deleteForever} /></TabsContent>
-          <TabsContent value="candidates" className="mt-6">
-            <CandidatesTab shortlisted={shortlisted} onShortlist={toggleShortlist} onView={setProfileId} />
-          </TabsContent>
-          <TabsContent value="compare" className="mt-6"><CompareTab /></TabsContent>
-          <TabsContent value="jobs" className="mt-6"><JobsTab onView={setProfileId} /></TabsContent>
-          <TabsContent value="interview" className="mt-6"><InterviewTab /></TabsContent>
-          <TabsContent value="analytics" className="mt-6"><AnalyticsTab /></TabsContent>
-        </Tabs>
-      </main>
+      </Tabs>
 
       <ProfileDialog
         candidate={profileCandidate}
@@ -408,16 +812,26 @@ function RecruiterDemo() {
 /* ---------------- Candidate card + tabs ---------------- */
 
 function CandidateCard({
-  c, shortlisted, onShortlist, onView,
+  c,
+  shortlisted,
+  onShortlist,
+  onView,
 }: {
-  c: Candidate; shortlisted: boolean; onShortlist: () => void; onView: () => void;
+  c: Candidate;
+  shortlisted: boolean;
+  onShortlist: () => void;
+  onView: () => void;
 }) {
   return (
-    <div className={`glass rounded-2xl p-6 transition hover:-translate-y-0.5 hover:shadow-luxe ${shortlisted ? "ring-1 ring-gold/60" : ""}`}>
+    <div
+      className={`glass rounded-2xl p-6 transition hover:-translate-y-0.5 hover:shadow-luxe ${shortlisted ? "ring-1 ring-gold/60" : ""}`}
+    >
       <div className="flex items-start justify-between">
         <div>
           <p className="font-medium">{c.name}</p>
-          <p className="text-xs text-muted-foreground">{c.role} · {c.location}</p>
+          <p className="text-xs text-muted-foreground">
+            {c.role} · {c.location}
+          </p>
           <p className="mt-1 text-[11px] text-muted-foreground">{c.experience}</p>
         </div>
         <div className="text-right">
@@ -427,14 +841,25 @@ function CandidateCard({
       </div>
       <div className="mt-4 flex flex-wrap gap-1.5">
         {c.skills.map((s) => (
-          <span key={s} className="rounded-full border border-border bg-card/40 px-2 py-0.5 text-[11px] text-muted-foreground">{s}</span>
+          <span
+            key={s}
+            className="rounded-full border border-border bg-card/40 px-2 py-0.5 text-[11px] text-muted-foreground"
+          >
+            {s}
+          </span>
         ))}
       </div>
       <p className="mt-3 text-xs text-muted-foreground">{c.highlight}</p>
       <div className="mt-4">
-        <div className="flex justify-between text-xs"><span>Readiness</span><span className="text-gold/80">{c.readiness}%</span></div>
+        <div className="flex justify-between text-xs">
+          <span>Readiness</span>
+          <span className="text-gold/80">{c.readiness}%</span>
+        </div>
         <div className="mt-1.5 h-1.5 rounded-full bg-card/60">
-          <div className="h-full rounded-full bg-gradient-to-r from-[#A87E3F] via-[#C9A86A] to-[#DFC189]" style={{ width: `${c.readiness}%` }} />
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-[#A87E3F] via-[#C9A86A] to-[#DFC189]"
+            style={{ width: `${c.readiness}%` }}
+          />
         </div>
       </div>
       <div className="mt-5 flex items-center justify-between">
@@ -466,9 +891,13 @@ function CandidateCard({
 }
 
 function CandidatesTab({
-  shortlisted, onShortlist, onView,
+  shortlisted,
+  onShortlist,
+  onView,
 }: {
-  shortlisted: Set<string>; onShortlist: (id: string) => void; onView: (id: string) => void;
+  shortlisted: Set<string>;
+  onShortlist: (id: string) => void;
+  onView: (id: string) => void;
 }) {
   return (
     <div>
@@ -477,12 +906,15 @@ function CandidatesTab({
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input placeholder="Search by skill, role, location…" className="pl-9" />
         </div>
-        <Button variant="outline" className="rounded-full"><Filter className="mr-2 h-4 w-4" /> Filters</Button>
+        <Button variant="outline" className="rounded-full">
+          <Filter className="mr-2 h-4 w-4" /> Filters
+        </Button>
       </div>
       <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {candidates.map((c) => (
           <CandidateCard
-            key={c.id} c={c}
+            key={c.id}
+            c={c}
             shortlisted={shortlisted.has(c.id)}
             onShortlist={() => onShortlist(c.id)}
             onView={() => onView(c.id)}
@@ -494,15 +926,20 @@ function CandidatesTab({
 }
 
 function ShortlistTab({
-  shortlisted, onToggle, onView,
+  shortlisted,
+  onToggle,
+  onView,
 }: {
-  shortlisted: Set<string>; onToggle: (id: string) => void; onView: (id: string) => void;
+  shortlisted: Set<string>;
+  onToggle: (id: string) => void;
+  onView: (id: string) => void;
 }) {
   const list = candidates.filter((c) => shortlisted.has(c.id));
   if (list.length === 0) {
     return (
       <div className="glass rounded-2xl p-10 text-center text-sm text-muted-foreground">
-        Tap the <Heart className="mx-1 inline h-4 w-4 text-[#E11D48]" /> heart on any candidate to add them to your shortlist.
+        Tap the <Heart className="mx-1 inline h-4 w-4 text-[#E11D48]" /> heart on any candidate to
+        add them to your shortlist.
       </div>
     );
   }
@@ -510,7 +947,8 @@ function ShortlistTab({
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
       {list.map((c) => (
         <CandidateCard
-          key={c.id} c={c}
+          key={c.id}
+          c={c}
           shortlisted
           onShortlist={() => onToggle(c.id)}
           onView={() => onView(c.id)}
@@ -523,7 +961,11 @@ function ShortlistTab({
 /* ---------------- Pipeline / Hired / Archive ---------------- */
 
 function PipelineTab({
-  pipeline, onAdvance, onBack, onApprove, onReject,
+  pipeline,
+  onAdvance,
+  onBack,
+  onApprove,
+  onReject,
 }: {
   pipeline: PipeCard[];
   onAdvance: (id: string) => void;
@@ -542,7 +984,9 @@ function PipelineTab({
           <div key={s.key} className="glass rounded-2xl p-4">
             <div className="flex items-center justify-between">
               <p className="text-xs uppercase tracking-[0.25em] text-gold/80">{s.label}</p>
-              <span className="rounded-full bg-gold-soft px-2 py-0.5 text-[10px] text-gold">{cards.length}</span>
+              <span className="rounded-full bg-gold-soft px-2 py-0.5 text-[10px] text-gold">
+                {cards.length}
+              </span>
             </div>
             <div className="mt-4 space-y-3">
               {cards.map((c, i) => (
@@ -567,7 +1011,9 @@ function PipelineTab({
                       >
                         <ArrowLeftIcon className="h-3 w-3" /> Prev
                       </button>
-                    ) : <span />}
+                    ) : (
+                      <span />
+                    )}
                     {!isLast ? (
                       <button
                         onClick={() => onAdvance(c.id)}
@@ -576,7 +1022,9 @@ function PipelineTab({
                       >
                         Next <ArrowRight className="h-3 w-3" />
                       </button>
-                    ) : <span />}
+                    ) : (
+                      <span />
+                    )}
                   </div>
 
                   {showApproveReject && (
@@ -598,7 +1046,9 @@ function PipelineTab({
                 </div>
               ))}
               {cards.length === 0 && (
-                <p className="rounded-xl border border-dashed border-border/40 p-3 text-center text-[11px] text-muted-foreground">Empty</p>
+                <p className="rounded-xl border border-dashed border-border/40 p-3 text-center text-[11px] text-muted-foreground">
+                  Empty
+                </p>
               )}
             </div>
           </div>
@@ -636,7 +1086,9 @@ function HiredTab({ hired }: { hired: PipeCard[] }) {
               <td className="px-5 py-4 text-muted-foreground">{c.role}</td>
               <td className="px-5 py-4 text-right font-display text-lg text-gold">{c.match}</td>
               <td className="px-5 py-4">
-                <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] text-emerald-400">Hired</span>
+                <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] text-emerald-400">
+                  Hired
+                </span>
               </td>
             </tr>
           ))}
@@ -646,11 +1098,20 @@ function HiredTab({ hired }: { hired: PipeCard[] }) {
   );
 }
 
-function ArchiveTab({ archive, onAddAgain, onDelete }: { archive: PipeCard[]; onAddAgain: (id: string) => void; onDelete: (id: string) => void }) {
+function ArchiveTab({
+  archive,
+  onAddAgain,
+  onDelete,
+}: {
+  archive: PipeCard[];
+  onAddAgain: (id: string) => void;
+  onDelete: (id: string) => void;
+}) {
   if (archive.length === 0) {
     return (
       <div className="glass rounded-2xl p-10 text-center text-sm text-muted-foreground">
-        Rejected candidates land here temporarily. You can re-add them to Offer or delete them permanently.
+        Rejected candidates land here temporarily. You can re-add them to Offer or delete them
+        permanently.
       </div>
     );
   }
@@ -675,10 +1136,20 @@ function ArchiveTab({ archive, onAddAgain, onDelete }: { archive: PipeCard[]; on
               <td className="px-5 py-4 text-right font-display text-lg text-gold">{c.match}</td>
               <td className="px-5 py-4">
                 <div className="flex items-center justify-end gap-2">
-                  <Button size="sm" variant="outline" className="rounded-full" onClick={() => onAddAgain(c.id)}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="rounded-full"
+                    onClick={() => onAddAgain(c.id)}
+                  >
                     <RotateCcw className="mr-1.5 h-3 w-3" /> Add again
                   </Button>
-                  <Button size="sm" variant="ghost" className="rounded-full text-red-400 hover:text-red-300" onClick={() => onDelete(c.id)}>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="rounded-full text-red-400 hover:text-red-300"
+                    onClick={() => onDelete(c.id)}
+                  >
                     <Trash2 className="mr-1.5 h-3 w-3" /> Delete
                   </Button>
                 </div>
@@ -710,8 +1181,7 @@ function CompareTab() {
     { key: "interviews", label: "Interview sessions" },
   ];
 
-  const best = (key: keyof Candidate) =>
-    Math.max(...selected.map((c) => Number(c[key])));
+  const best = (key: keyof Candidate) => Math.max(...selected.map((c) => Number(c[key])));
 
   return (
     <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
@@ -719,7 +1189,10 @@ function CompareTab() {
         <p className="text-xs uppercase tracking-[0.25em] text-gold/80">Select up to 4</p>
         <div className="mt-3 space-y-2">
           {candidates.map((c) => (
-            <label key={c.id} className="flex cursor-pointer items-center gap-3 rounded-xl border border-border bg-card/30 px-3 py-2 hover:bg-card/50">
+            <label
+              key={c.id}
+              className="flex cursor-pointer items-center gap-3 rounded-xl border border-border bg-card/30 px-3 py-2 hover:bg-card/50"
+            >
               <Checkbox checked={picked.includes(c.id)} onCheckedChange={() => toggle(c.id)} />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm">{c.name}</p>
@@ -733,7 +1206,9 @@ function CompareTab() {
 
       <div className="glass overflow-hidden rounded-2xl">
         {selected.length === 0 ? (
-          <div className="p-8 text-center text-sm text-muted-foreground">Select candidates on the left to compare.</div>
+          <div className="p-8 text-center text-sm text-muted-foreground">
+            Select candidates on the left to compare.
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -759,7 +1234,13 @@ function CompareTab() {
                         const isTop = v === top;
                         return (
                           <td key={c.id} className="px-4 py-3 text-right">
-                            <span className={isTop ? "font-display text-lg text-gold" : "text-foreground"}>{v}</span>
+                            <span
+                              className={
+                                isTop ? "font-display text-lg text-gold" : "text-foreground"
+                              }
+                            >
+                              {v}
+                            </span>
                           </td>
                         );
                       })}
@@ -769,7 +1250,10 @@ function CompareTab() {
                 <tr>
                   <td className="px-4 py-3 text-muted-foreground">AI brief</td>
                   {selected.map((c) => (
-                    <td key={c.id} className="max-w-[260px] px-4 py-3 text-right text-xs text-muted-foreground">
+                    <td
+                      key={c.id}
+                      className="max-w-[260px] px-4 py-3 text-right text-xs text-muted-foreground"
+                    >
                       {c.highlight}
                     </td>
                   ))}
@@ -813,31 +1297,52 @@ function JobsTab({ onView }: { onView: (id: string) => void }) {
                 <td className="px-5 py-4 font-medium">{j.title}</td>
                 <td className="px-5 py-4 text-muted-foreground">{j.applicants}</td>
                 <td className="px-5 py-4">
-                  <span className={`rounded-full px-2 py-0.5 text-xs ${j.stage === "Open" ? "bg-gold-soft text-gold" : "bg-card/60 text-muted-foreground"}`}>{j.stage}</span>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-xs ${j.stage === "Open" ? "bg-gold-soft text-gold" : "bg-card/60 text-muted-foreground"}`}
+                  >
+                    {j.stage}
+                  </span>
                 </td>
                 <td className="px-5 py-4">
                   {top ? (
                     <div className="flex items-center gap-3">
                       <div>
                         <p className="font-medium">{top.name}</p>
-                        <p className="text-[11px] text-muted-foreground">{top.role} · {top.location}</p>
+                        <p className="text-[11px] text-muted-foreground">
+                          {top.role} · {top.location}
+                        </p>
                       </div>
                       <span className="font-display text-xl text-gold">{top.match}</span>
                     </div>
-                  ) : <span className="text-muted-foreground">—</span>}
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
                 </td>
                 <td className="px-5 py-4">
                   <div className="flex items-center justify-end gap-2">
                     {top && (
                       <>
-                        <Button size="sm" variant="ghost" className="rounded-full text-muted-foreground hover:text-gold" onClick={() => onView(top.id)}>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="rounded-full text-muted-foreground hover:text-gold"
+                          onClick={() => onView(top.id)}
+                        >
                           View profile
                         </Button>
-                        <Button size="sm" className="rounded-full bg-gold-soft text-gold border border-gold hover:bg-gold-soft">
+                        <Button
+                          size="sm"
+                          className="rounded-full bg-gold-soft text-gold border border-gold hover:bg-gold-soft"
+                        >
                           <Check className="mr-1.5 h-3 w-3" /> Select
                         </Button>
                         {j.topMatchIds.length > 1 && (
-                          <Button size="sm" variant="outline" className="rounded-full" onClick={() => nextBest(j.id, j.topMatchIds.length)}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="rounded-full"
+                            onClick={() => nextBest(j.id, j.topMatchIds.length)}
+                          >
                             Next best <ArrowRight className="ml-1 h-3 w-3" />
                           </Button>
                         )}
@@ -870,7 +1375,9 @@ function InterviewTab() {
               className="flex w-full items-center justify-between gap-4 px-6 py-4 text-left"
             >
               <div className="min-w-0">
-                <p className="text-[10px] uppercase tracking-[0.25em] text-gold/80">{r.role} · {r.company}</p>
+                <p className="text-[10px] uppercase tracking-[0.25em] text-gold/80">
+                  {r.role} · {r.company}
+                </p>
                 <p className="mt-1 font-display text-xl">{c?.name ?? "Candidate"}</p>
                 <p className="text-xs text-muted-foreground">
                   <Clock className="mr-1 inline h-3 w-3" /> {r.duration} · {r.date}
@@ -881,7 +1388,11 @@ function InterviewTab() {
                   <p className="font-display text-2xl text-gold">{r.scores.tech}</p>
                   <p className="text-[10px] uppercase text-muted-foreground">tech</p>
                 </div>
-                {isOpen ? <ChevronUp className="h-5 w-5 text-gold" /> : <ChevronDown className="h-5 w-5 text-gold" />}
+                {isOpen ? (
+                  <ChevronUp className="h-5 w-5 text-gold" />
+                ) : (
+                  <ChevronDown className="h-5 w-5 text-gold" />
+                )}
               </div>
             </button>
             {isOpen && <ReplayBody session={r} candidate={c} />}
@@ -899,9 +1410,14 @@ function ReplayBody({ session, candidate }: { session: ReplaySession; candidate?
 
   useEffect(() => {
     if (!playing) return;
-    if (step >= session.transcript.length - 1) { setPlaying(false); return; }
+    if (step >= session.transcript.length - 1) {
+      setPlaying(false);
+      return;
+    }
     timer.current = setTimeout(() => setStep((s) => s + 1), 1800);
-    return () => { if (timer.current) clearTimeout(timer.current); };
+    return () => {
+      if (timer.current) clearTimeout(timer.current);
+    };
   }, [playing, step, session.transcript.length]);
 
   const toggle = () => {
@@ -918,21 +1434,39 @@ function ReplayBody({ session, candidate }: { session: ReplaySession; candidate?
           <div className="flex items-center justify-between">
             <p className="text-xs uppercase tracking-[0.25em] text-gold/80">Transcript</p>
             <Button
-              size="sm" onClick={toggle}
+              size="sm"
+              onClick={toggle}
               className="rounded-full bg-gold-soft text-gold border border-gold hover:bg-gold-soft"
             >
-              {playing
-                ? <><Pause className="mr-2 h-4 w-4" /> Pause</>
-                : <><Play className="mr-2 h-4 w-4" /> {step === 0 ? "Replay" : step >= session.transcript.length - 1 ? "Restart" : "Resume"}</>}
+              {playing ? (
+                <>
+                  <Pause className="mr-2 h-4 w-4" /> Pause
+                </>
+              ) : (
+                <>
+                  <Play className="mr-2 h-4 w-4" />{" "}
+                  {step === 0
+                    ? "Replay"
+                    : step >= session.transcript.length - 1
+                      ? "Restart"
+                      : "Resume"}
+                </>
+              )}
             </Button>
           </div>
           <div className="mt-4 space-y-3">
             {visible.map((t, i) => (
               <div key={i}>
-                <div className={t.who === "AI"
-                  ? "rounded-xl border border-border bg-card/40 p-4"
-                  : "rounded-xl bg-gold-soft p-4 text-foreground"}>
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{t.who}</p>
+                <div
+                  className={
+                    t.who === "AI"
+                      ? "rounded-xl border border-border bg-card/40 p-4"
+                      : "rounded-xl bg-gold-soft p-4 text-foreground"
+                  }
+                >
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    {t.who}
+                  </p>
                   <p className="mt-1 text-sm leading-relaxed">{t.text}</p>
                 </div>
                 {t.analysis && (
@@ -955,23 +1489,33 @@ function ReplayBody({ session, candidate }: { session: ReplaySession; candidate?
           <div className="rounded-xl border border-border bg-card/40 p-4">
             <p className="text-xs uppercase tracking-[0.25em] text-gold/80">Session scores</p>
             <div className="mt-4 space-y-3">
-              {([
-                ["Technical depth", session.scores.tech],
-                ["Communication", session.scores.comm],
-                ["Problem solving", session.scores.problem],
-                ["Role readiness", session.scores.readiness],
-              ] as const).map(([k, v]) => (
+              {(
+                [
+                  ["Technical depth", session.scores.tech],
+                  ["Communication", session.scores.comm],
+                  ["Problem solving", session.scores.problem],
+                  ["Role readiness", session.scores.readiness],
+                ] as const
+              ).map(([k, v]) => (
                 <div key={k}>
-                  <div className="flex justify-between text-xs"><span>{k}</span><span className="text-gold/80">{v}%</span></div>
+                  <div className="flex justify-between text-xs">
+                    <span>{k}</span>
+                    <span className="text-gold/80">{v}%</span>
+                  </div>
                   <div className="mt-1.5 h-1.5 rounded-full bg-card/60">
-                    <div className="h-full rounded-full bg-gradient-to-r from-[#A87E3F] via-[#C9A86A] to-[#DFC189]" style={{ width: `${v}%` }} />
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-[#A87E3F] via-[#C9A86A] to-[#DFC189]"
+                      style={{ width: `${v}%` }}
+                    />
                   </div>
                 </div>
               ))}
             </div>
           </div>
           <div className="rounded-xl border border-border bg-card/40 p-4 text-xs">
-            <p className="text-[10px] uppercase tracking-[0.25em] text-gold/80">Behavioral signals</p>
+            <p className="text-[10px] uppercase tracking-[0.25em] text-gold/80">
+              Behavioral signals
+            </p>
             <dl className="mt-3 space-y-2">
               <Row label="Typing speed" value={session.signals.typingSpeed} />
               <Row label="Paste ratio" value={session.signals.pasteRatio} />
@@ -981,7 +1525,9 @@ function ReplayBody({ session, candidate }: { session: ReplaySession; candidate?
           </div>
           {candidate && (
             <div className="rounded-xl border border-gold/40 bg-gold-soft/30 p-4 text-xs">
-              <p className="text-[10px] uppercase tracking-[0.25em] text-gold">Why this candidate stands out</p>
+              <p className="text-[10px] uppercase tracking-[0.25em] text-gold">
+                Why this candidate stands out
+              </p>
               <p className="mt-2 text-muted-foreground">{candidate.highlight}</p>
               <p className="mt-2 text-muted-foreground">
                 Most suitable for <span className="text-gold">{candidate.appliedFor}</span>.
@@ -1031,15 +1577,22 @@ function AnalyticsTab() {
         <div className="mt-6 space-y-3">
           {funnel.map(([k, v]) => (
             <div key={k}>
-              <div className="flex justify-between text-sm"><span>{k}</span><span className="text-muted-foreground">{v}</span></div>
+              <div className="flex justify-between text-sm">
+                <span>{k}</span>
+                <span className="text-muted-foreground">{v}</span>
+              </div>
               <div className="mt-1.5 h-2 rounded-full bg-card/60">
-                <div className="h-full rounded-full bg-gradient-to-r from-[#A87E3F] via-[#C9A86A] to-[#DFC189]" style={{ width: `${(v / max) * 100}%` }} />
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-[#A87E3F] via-[#C9A86A] to-[#DFC189]"
+                  style={{ width: `${(v / max) * 100}%` }}
+                />
               </div>
             </div>
           ))}
         </div>
         <p className="mt-6 text-[11px] text-muted-foreground">
-          Conversion screen→offer: <span className="text-gold">11%</span> · offer→hire: <span className="text-gold">61%</span>
+          Conversion screen→offer: <span className="text-gold">11%</span> · offer→hire:{" "}
+          <span className="text-gold">61%</span>
         </p>
       </div>
 
@@ -1111,7 +1664,10 @@ function AnalyticsTab() {
 /* ---------------- Profile Dialog ---------------- */
 
 function ProfileDialog({
-  candidate, shortlisted, onShortlist, onClose,
+  candidate,
+  shortlisted,
+  onShortlist,
+  onClose,
 }: {
   candidate: Candidate | null;
   shortlisted: boolean;
@@ -1126,7 +1682,9 @@ function ProfileDialog({
             <DialogHeader>
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <DialogTitle className="font-display text-2xl text-gold">{candidate.name}</DialogTitle>
+                  <DialogTitle className="font-display text-2xl text-gold">
+                    {candidate.name}
+                  </DialogTitle>
                   <DialogDescription className="text-muted-foreground">
                     {candidate.role} · {candidate.location} · {candidate.experience}
                   </DialogDescription>
@@ -1139,7 +1697,11 @@ function ProfileDialog({
             </DialogHeader>
 
             <div className="mt-2 grid gap-4 sm:grid-cols-2">
-              <Info icon={UserIcon} label="Age / Gender" value={`${candidate.age} · ${candidate.gender}`} />
+              <Info
+                icon={UserIcon}
+                label="Age / Gender"
+                value={`${candidate.age} · ${candidate.gender}`}
+              />
               <Info icon={Briefcase} label="Applied for" value={candidate.appliedFor} />
               <Info icon={Mail} label="Email" value={candidate.email} />
               <Info icon={MapPin} label="Location" value={candidate.location} />
@@ -1147,26 +1709,40 @@ function ProfileDialog({
 
             <Section icon={GraduationCap} title="Qualifications">
               <ul className="ml-1 list-inside list-disc space-y-1 text-sm text-muted-foreground">
-                {candidate.qualifications.map((q) => <li key={q}>{q}</li>)}
+                {candidate.qualifications.map((q) => (
+                  <li key={q}>{q}</li>
+                ))}
               </ul>
             </Section>
 
             <Section icon={Trophy} title="Certifications">
               <div className="flex flex-wrap gap-1.5">
                 {candidate.certifications.map((c) => (
-                  <Badge key={c} variant="outline" className="rounded-full border-gold/40 text-gold">{c}</Badge>
+                  <Badge
+                    key={c}
+                    variant="outline"
+                    className="rounded-full border-gold/40 text-gold"
+                  >
+                    {c}
+                  </Badge>
                 ))}
               </div>
             </Section>
 
             <Section icon={Languages} title="Languages & hobbies">
-              <p className="text-sm text-muted-foreground"><span className="text-gold/80">Languages:</span> {candidate.languages.join(" · ")}</p>
-              <p className="mt-1 text-sm text-muted-foreground"><span className="text-gold/80">Hobbies:</span> {candidate.hobbies.join(" · ")}</p>
+              <p className="text-sm text-muted-foreground">
+                <span className="text-gold/80">Languages:</span> {candidate.languages.join(" · ")}
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                <span className="text-gold/80">Hobbies:</span> {candidate.hobbies.join(" · ")}
+              </p>
             </Section>
 
             <Section icon={FileText} title="Resume highlights">
               <ul className="ml-1 list-inside list-disc space-y-1 text-sm text-muted-foreground">
-                {candidate.resumeBullets.map((b) => <li key={b}>{b}</li>)}
+                {candidate.resumeBullets.map((b) => (
+                  <li key={b}>{b}</li>
+                ))}
               </ul>
             </Section>
 
@@ -1188,19 +1764,25 @@ function ProfileDialog({
                   <p className="mt-1 text-muted-foreground">Experience</p>
                 </div>
                 <div className="rounded-xl border border-border bg-card/30 p-3">
-                  <p className="font-display text-xl text-gold">{candidate.extracted.pastCompanies.length}</p>
+                  <p className="font-display text-xl text-gold">
+                    {candidate.extracted.pastCompanies.length}
+                  </p>
                   <p className="mt-1 text-muted-foreground">Past companies</p>
                 </div>
                 <div className="rounded-xl border border-border bg-card/30 p-3">
-                  <p className="font-display text-xl text-gold">{candidate.extracted.topSkills.length}</p>
+                  <p className="font-display text-xl text-gold">
+                    {candidate.extracted.topSkills.length}
+                  </p>
                   <p className="mt-1 text-muted-foreground">Top skills</p>
                 </div>
               </div>
               <p className="mt-3 text-xs text-muted-foreground">
-                <span className="text-gold/80">Past companies:</span> {candidate.extracted.pastCompanies.join(", ")}
+                <span className="text-gold/80">Past companies:</span>{" "}
+                {candidate.extracted.pastCompanies.join(", ")}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
-                <span className="text-gold/80">Top skills:</span> {candidate.extracted.topSkills.join(", ")}
+                <span className="text-gold/80">Top skills:</span>{" "}
+                {candidate.extracted.topSkills.join(", ")}
               </p>
             </Section>
 
@@ -1230,10 +1812,14 @@ function ProfileDialog({
                     : "rounded-full"
                 }
               >
-                <Heart className={`mr-1.5 h-4 w-4 ${shortlisted ? "fill-[#E11D48] text-[#E11D48]" : ""}`} />
+                <Heart
+                  className={`mr-1.5 h-4 w-4 ${shortlisted ? "fill-[#E11D48] text-[#E11D48]" : ""}`}
+                />
                 {shortlisted ? "Shortlisted" : "Shortlist"}
               </Button>
-              <Button onClick={onClose} variant="ghost" className="rounded-full">Close</Button>
+              <Button onClick={onClose} variant="ghost" className="rounded-full">
+                Close
+              </Button>
             </div>
           </>
         )}
@@ -1254,7 +1840,15 @@ function Info({ icon: Icon, label, value }: { icon: typeof Mail; label: string; 
   );
 }
 
-function Section({ icon: Icon, title, children }: { icon: typeof Mail; title: string; children: React.ReactNode }) {
+function Section({
+  icon: Icon,
+  title,
+  children,
+}: {
+  icon: typeof Mail;
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="mt-4">
       <p className="mb-2 flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-gold/80">

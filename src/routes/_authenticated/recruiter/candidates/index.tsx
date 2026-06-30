@@ -9,7 +9,13 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { summarizeCandidate } from "@/lib/ai.functions";
@@ -44,7 +50,9 @@ function Candidates() {
     queryFn: async () => {
       const { data } = await supabase
         .from("applications")
-        .select("*, profiles!applications_candidate_id_fkey(full_name,email,experience_level,education), jobs!inner(title,recruiter_id,skills,description), resumes(parsed_skills,ats_score,content)")
+        .select(
+          "*, profiles!applications_candidate_id_fkey(full_name,email,experience_level,education), jobs!inner(title,recruiter_id,skills,description), resumes(parsed_skills,ats_score,content)",
+        )
         .in("jobs.recruiter_id", teamIds)
         .order("match_score", { ascending: false });
       return data ?? [];
@@ -53,12 +61,14 @@ function Candidates() {
 
   const allSkills = useMemo(() => {
     const set = new Set<string>();
-    (apps ?? []).forEach(a => ((a as any).resumes?.parsed_skills ?? []).forEach((s: string) => set.add(s)));
+    (apps ?? []).forEach((a) =>
+      ((a as any).resumes?.parsed_skills ?? []).forEach((s: string) => set.add(s)),
+    );
     return Array.from(set).sort();
   }, [apps]);
 
   const filtered = useMemo(() => {
-    let list = (apps ?? []).filter(a => {
+    let list = (apps ?? []).filter((a) => {
       const p = (a as any).profiles;
       const j = (a as any).jobs;
       const r = (a as any).resumes;
@@ -68,52 +78,78 @@ function Candidates() {
       if (activeStages.length && !activeStages.includes(a.stage as string)) return false;
       if ((a.match_score ?? 0) < minMatch) return false;
       if (experience !== "all" && p?.experience_level !== experience) return false;
-      if (skillFilter.length && !skillFilter.every(s => skills.includes(s))) return false;
+      if (skillFilter.length && !skillFilter.every((s) => skills.includes(s))) return false;
       return true;
     });
     list = [...list].sort((a, b) => {
-      if (sortBy === "ats") return (((b as any).resumes?.ats_score ?? 0) - ((a as any).resumes?.ats_score ?? 0));
-      if (sortBy === "recent") return (new Date(b.created_at as any).getTime() - new Date(a.created_at as any).getTime());
-      return ((b.match_score ?? 0) - (a.match_score ?? 0));
+      if (sortBy === "ats")
+        return ((b as any).resumes?.ats_score ?? 0) - ((a as any).resumes?.ats_score ?? 0);
+      if (sortBy === "recent")
+        return new Date(b.created_at as any).getTime() - new Date(a.created_at as any).getTime();
+      return (b.match_score ?? 0) - (a.match_score ?? 0);
     });
     return list;
   }, [apps, search, activeStages, minMatch, experience, skillFilter, sortBy]);
 
-  const open = filtered.find(a => a.id === openId);
+  const open = filtered.find((a) => a.id === openId);
 
   function toggleStage(s: string) {
-    setActiveStages(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
+    setActiveStages((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
   }
   function toggleSkill(s: string) {
-    setSkillFilter(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
+    setSkillFilter((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
   }
   function resetFilters() {
-    setActiveStages([]); setMinMatch(0); setExperience("all"); setSkillFilter([]); setSearch("");
+    setActiveStages([]);
+    setMinMatch(0);
+    setExperience("all");
+    setSkillFilter([]);
+    setSearch("");
   }
 
   async function runSummary(appId: string) {
-    setLoadingSummary(true); setSummary("");
+    setLoadingSummary(true);
+    setSummary("");
     try {
       const r = await summarize({ data: { applicationId: appId } });
       setSummary(r.summary);
-    } catch (e: any) { toast.error(e.message ?? "Failed"); }
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed");
+    }
     setLoadingSummary(false);
   }
 
-  const activeFilterCount = activeStages.length + skillFilter.length + (minMatch > 0 ? 1 : 0) + (experience !== "all" ? 1 : 0);
+  const activeFilterCount =
+    activeStages.length +
+    skillFilter.length +
+    (minMatch > 0 ? 1 : 0) +
+    (experience !== "all" ? 1 : 0);
 
   return (
-    <RecruiterShell eyebrow="All applicants" title={<span>Talent <span className="text-gold">Intelligence</span></span>}>
+    <RecruiterShell
+      eyebrow="All applicants"
+      title={
+        <span>
+          Talent <span className="text-gold">Intelligence</span>
+        </span>
+      }
+    >
       {/* Search + sort header */}
       <div className="glass rounded-2xl p-4">
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative flex-1 min-w-[240px]">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder="Search by name, role, or skill" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+            <Input
+              placeholder="Search by name, role, or skill"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+            />
           </div>
           <Select value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
             <SelectTrigger className="w-44 rounded-full">
-              <ArrowUpDown className="mr-2 h-4 w-4" /><SelectValue />
+              <ArrowUpDown className="mr-2 h-4 w-4" />
+              <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="match">Best match</SelectItem>
@@ -122,7 +158,12 @@ function Candidates() {
             </SelectContent>
           </Select>
           {activeFilterCount > 0 && (
-            <Button variant="ghost" size="sm" onClick={resetFilters} className="rounded-full text-xs text-gold">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={resetFilters}
+              className="rounded-full text-xs text-gold"
+            >
               <X className="mr-1 h-3 w-3" /> Clear {activeFilterCount}
             </Button>
           )}
@@ -131,13 +172,18 @@ function Candidates() {
         {/* Advanced filter rail */}
         <div className="mt-4 grid gap-4 border-t border-gold/15 pt-4 lg:grid-cols-[1fr_220px_220px]">
           <div>
-            <p className="mb-2 flex items-center gap-2 text-[10px] uppercase tracking-wider text-muted-foreground"><SlidersHorizontal className="h-3 w-3" /> Pipeline stage</p>
+            <p className="mb-2 flex items-center gap-2 text-[10px] uppercase tracking-wider text-muted-foreground">
+              <SlidersHorizontal className="h-3 w-3" /> Pipeline stage
+            </p>
             <div className="flex flex-wrap gap-1.5">
-              {STAGES.map(s => {
+              {STAGES.map((s) => {
                 const active = activeStages.includes(s);
                 return (
-                  <button key={s} onClick={() => toggleStage(s)}
-                    className={`rounded-full border px-3 py-1 text-xs capitalize transition ${active ? "border-gold bg-gold-soft text-gold" : "border-border/40 text-muted-foreground hover:text-foreground"}`}>
+                  <button
+                    key={s}
+                    onClick={() => toggleStage(s)}
+                    className={`rounded-full border px-3 py-1 text-xs capitalize transition ${active ? "border-gold bg-gold-soft text-gold" : "border-border/40 text-muted-foreground hover:text-foreground"}`}
+                  >
                     {s}
                   </button>
                 );
@@ -145,16 +191,32 @@ function Candidates() {
             </div>
           </div>
           <div>
-            <p className="mb-2 text-[10px] uppercase tracking-wider text-muted-foreground">Min match score · <span className="text-gold">{minMatch}</span></p>
-            <Slider value={[minMatch]} onValueChange={(v) => setMinMatch(v[0])} min={0} max={100} step={5} />
+            <p className="mb-2 text-[10px] uppercase tracking-wider text-muted-foreground">
+              Min match score · <span className="text-gold">{minMatch}</span>
+            </p>
+            <Slider
+              value={[minMatch]}
+              onValueChange={(v) => setMinMatch(v[0])}
+              min={0}
+              max={100}
+              step={5}
+            />
           </div>
           <div>
-            <p className="mb-2 text-[10px] uppercase tracking-wider text-muted-foreground">Experience</p>
+            <p className="mb-2 text-[10px] uppercase tracking-wider text-muted-foreground">
+              Experience
+            </p>
             <Select value={experience} onValueChange={setExperience}>
-              <SelectTrigger className="h-9 rounded-full text-xs"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-9 rounded-full text-xs">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All levels</SelectItem>
-                {EXPERIENCE.map(e => <SelectItem key={e} value={e} className="capitalize">{e}</SelectItem>)}
+                {EXPERIENCE.map((e) => (
+                  <SelectItem key={e} value={e} className="capitalize">
+                    {e}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -162,13 +224,18 @@ function Candidates() {
 
         {!!allSkills.length && (
           <div className="mt-4 border-t border-gold/15 pt-4">
-            <p className="mb-2 text-[10px] uppercase tracking-wider text-muted-foreground">Required skills (AND)</p>
+            <p className="mb-2 text-[10px] uppercase tracking-wider text-muted-foreground">
+              Required skills (AND)
+            </p>
             <div className="flex flex-wrap gap-1.5">
-              {allSkills.slice(0, 24).map(s => {
+              {allSkills.slice(0, 24).map((s) => {
                 const active = skillFilter.includes(s);
                 return (
-                  <button key={s} onClick={() => toggleSkill(s)}
-                    className={`rounded-full border px-2.5 py-1 text-[11px] transition ${active ? "border-gold bg-gold-soft text-gold" : "border-border/30 text-muted-foreground hover:text-foreground"}`}>
+                  <button
+                    key={s}
+                    onClick={() => toggleSkill(s)}
+                    className={`rounded-full border px-2.5 py-1 text-[11px] transition ${active ? "border-gold bg-gold-soft text-gold" : "border-border/30 text-muted-foreground hover:text-foreground"}`}
+                  >
                     {s}
                   </button>
                 );
@@ -178,110 +245,217 @@ function Candidates() {
         )}
       </div>
 
-      <p className="mt-4 text-xs text-muted-foreground">{filtered.length} of {(apps ?? []).length} candidates</p>
+      <p className="mt-4 text-xs text-muted-foreground">
+        {filtered.length} of {(apps ?? []).length} candidates
+      </p>
 
       <div className="glass mt-2 overflow-hidden rounded-2xl">
         <table className="w-full text-sm">
           <thead className="border-b border-border/40 bg-card/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
-            <tr><th className="px-4 py-3">Candidate</th><th className="px-4 py-3">Role</th><th className="px-4 py-3">Stage</th><th className="px-4 py-3">Match</th><th className="px-4 py-3">ATS</th><th className="px-4 py-3"></th></tr>
+            <tr>
+              <th className="px-4 py-3">Candidate</th>
+              <th className="px-4 py-3">Role</th>
+              <th className="px-4 py-3">Stage</th>
+              <th className="px-4 py-3">Match</th>
+              <th className="px-4 py-3">ATS</th>
+              <th className="px-4 py-3"></th>
+            </tr>
           </thead>
           <tbody>
-            {filtered.map(a => {
+            {filtered.map((a) => {
               const p = (a as any).profiles;
               const j = (a as any).jobs;
               const r = (a as any).resumes;
               return (
                 <tr key={a.id} className="border-b border-border/20 hover:bg-card/30">
-                  <td className="px-4 py-3"><p className="font-medium">{p?.full_name ?? "—"}</p><p className="text-xs text-muted-foreground capitalize">{p?.experience_level ?? ""}</p></td>
+                  <td className="px-4 py-3">
+                    <p className="font-medium">{p?.full_name ?? "—"}</p>
+                    <p className="text-xs text-muted-foreground capitalize">
+                      {p?.experience_level ?? ""}
+                    </p>
+                  </td>
                   <td className="px-4 py-3">{j?.title}</td>
-                  <td className="px-4 py-3"><Badge variant="secondary" className="rounded-full capitalize">{a.stage}</Badge></td>
-                  <td className="px-4 py-3 font-display text-lg text-gold">{a.match_score ?? "—"}</td>
-                  <td className="px-4 py-3 font-display text-base text-gold/80">{r?.ats_score ?? "—"}</td>
-                  <td className="px-4 py-3 text-right"><Button size="sm" variant="ghost" onClick={() => { setOpenId(a.id); setSummary(""); }}>Open</Button></td>
+                  <td className="px-4 py-3">
+                    <Badge variant="secondary" className="rounded-full capitalize">
+                      {a.stage}
+                    </Badge>
+                  </td>
+                  <td className="px-4 py-3 font-display text-lg text-gold">
+                    {a.match_score ?? "—"}
+                  </td>
+                  <td className="px-4 py-3 font-display text-base text-gold/80">
+                    {r?.ats_score ?? "—"}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setOpenId(a.id);
+                        setSummary("");
+                      }}
+                    >
+                      Open
+                    </Button>
+                  </td>
                 </tr>
               );
             })}
-            {!filtered.length && <tr><td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">No candidates match these filters.</td></tr>}
+            {!filtered.length && (
+              <tr>
+                <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">
+                  No candidates match these filters.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
 
       <Sheet open={!!openId} onOpenChange={(o) => !o && setOpenId(null)}>
         <SheetContent side="right" className="recruiter w-full max-w-xl overflow-y-auto">
-          <SheetHeader><SheetTitle className="text-gold">{(open as any)?.profiles?.full_name ?? "Candidate"}</SheetTitle></SheetHeader>
-          {open && (() => {
-            const jobSkills: string[] = ((open as any).jobs?.skills ?? []) as string[];
-            const candSkills: string[] = ((open as any).resumes?.parsed_skills ?? []) as string[];
-            const candSet = new Set(candSkills.map(s => s.toLowerCase()));
-            const matched = jobSkills.filter(s => candSet.has(s.toLowerCase()));
-            const missing = jobSkills.filter(s => !candSet.has(s.toLowerCase()));
-            const coverage = jobSkills.length ? Math.round((matched.length / jobSkills.length) * 100) : null;
-            const ats = (open as any).resumes?.ats_score as number | null;
-            const ms = open.match_score ?? null;
-            return (
-              <div className="mt-4 space-y-4">
-                <div className="rounded-xl bg-card/40 p-4 text-sm">
-                  <p className="text-xs uppercase text-muted-foreground">Applied to</p>
-                  <p className="mt-1 font-medium">{(open as any).jobs?.title}</p>
-                  <div className="mt-3 grid grid-cols-3 gap-3 text-center">
-                    <div><p className="text-[10px] uppercase text-muted-foreground">Match</p><p className="font-display text-2xl text-gold">{ms ?? "—"}</p></div>
-                    <div><p className="text-[10px] uppercase text-muted-foreground">ATS</p><p className="font-display text-2xl text-gold">{ats ?? "—"}</p></div>
-                    <div><p className="text-[10px] uppercase text-muted-foreground">Stage</p><p className="font-display text-base capitalize">{open.stage}</p></div>
+          <SheetHeader>
+            <SheetTitle className="text-gold">
+              {(open as any)?.profiles?.full_name ?? "Candidate"}
+            </SheetTitle>
+          </SheetHeader>
+          {open &&
+            (() => {
+              const jobSkills: string[] = ((open as any).jobs?.skills ?? []) as string[];
+              const candSkills: string[] = ((open as any).resumes?.parsed_skills ?? []) as string[];
+              const candSet = new Set(candSkills.map((s) => s.toLowerCase()));
+              const matched = jobSkills.filter((s) => candSet.has(s.toLowerCase()));
+              const missing = jobSkills.filter((s) => !candSet.has(s.toLowerCase()));
+              const coverage = jobSkills.length
+                ? Math.round((matched.length / jobSkills.length) * 100)
+                : null;
+              const ats = (open as any).resumes?.ats_score as number | null;
+              const ms = open.match_score ?? null;
+              return (
+                <div className="mt-4 space-y-4">
+                  <div className="rounded-xl bg-card/40 p-4 text-sm">
+                    <p className="text-xs uppercase text-muted-foreground">Applied to</p>
+                    <p className="mt-1 font-medium">{(open as any).jobs?.title}</p>
+                    <div className="mt-3 grid grid-cols-3 gap-3 text-center">
+                      <div>
+                        <p className="text-[10px] uppercase text-muted-foreground">Match</p>
+                        <p className="font-display text-2xl text-gold">{ms ?? "—"}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase text-muted-foreground">ATS</p>
+                        <p className="font-display text-2xl text-gold">{ats ?? "—"}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase text-muted-foreground">Stage</p>
+                        <p className="font-display text-base capitalize">{open.stage}</p>
+                      </div>
+                    </div>
                   </div>
-                </div>
 
-                {/* Match score breakdown */}
-                <div className="rounded-xl border border-gold/20 bg-gold-soft/40 p-4 text-sm">
-                  <p className="text-[10px] uppercase tracking-wider text-gold mb-3">Match score breakdown</p>
-                  {coverage != null && (
-                    <BreakdownBar label="Skill coverage" value={coverage} hint={`${matched.length}/${jobSkills.length} required skills`} />
+                  {/* Match score breakdown */}
+                  <div className="rounded-xl border border-gold/20 bg-gold-soft/40 p-4 text-sm">
+                    <p className="text-[10px] uppercase tracking-wider text-gold mb-3">
+                      Match score breakdown
+                    </p>
+                    {coverage != null && (
+                      <BreakdownBar
+                        label="Skill coverage"
+                        value={coverage}
+                        hint={`${matched.length}/${jobSkills.length} required skills`}
+                      />
+                    )}
+                    {ats != null && <BreakdownBar label="Resume ATS" value={ats} />}
+                    {ms != null && <BreakdownBar label="Overall AI match" value={ms} />}
+                    <p className="mt-2 text-[11px] text-muted-foreground">
+                      Combines required-skill overlap, resume ATS, and the AI's holistic fit signal.
+                    </p>
+                  </div>
+
+                  {!!matched.length && (
+                    <div>
+                      <p className="text-xs uppercase text-emerald-500/80 flex items-center gap-1">
+                        ✓ Matched required skills
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {matched.map((s) => (
+                          <Badge
+                            key={s}
+                            variant="outline"
+                            className="rounded-full text-[10px] border-emerald-500/30 text-emerald-500"
+                          >
+                            {s}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
                   )}
-                  {ats != null && <BreakdownBar label="Resume ATS" value={ats} />}
-                  {ms != null && <BreakdownBar label="Overall AI match" value={ms} />}
-                  <p className="mt-2 text-[11px] text-muted-foreground">
-                    Combines required-skill overlap, resume ATS, and the AI's holistic fit signal.
-                  </p>
-                </div>
+                  {!!missing.length && (
+                    <div>
+                      <p className="text-xs uppercase text-amber-500/80">! Missing from JD</p>
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {missing.map((s) => (
+                          <Badge
+                            key={s}
+                            variant="outline"
+                            className="rounded-full text-[10px] border-amber-500/30 text-amber-500"
+                          >
+                            {s}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
-                {!!matched.length && (
                   <div>
-                    <p className="text-xs uppercase text-emerald-500/80 flex items-center gap-1">✓ Matched required skills</p>
+                    <p className="text-xs uppercase text-muted-foreground">All candidate skills</p>
                     <div className="mt-2 flex flex-wrap gap-1">
-                      {matched.map(s => <Badge key={s} variant="outline" className="rounded-full text-[10px] border-emerald-500/30 text-emerald-500">{s}</Badge>)}
+                      {candSkills.map((s: string) => (
+                        <Badge
+                          key={s}
+                          variant="outline"
+                          className="rounded-full text-[10px] border-gold/30 text-gold/80"
+                        >
+                          {s}
+                        </Badge>
+                      ))}
                     </div>
                   </div>
-                )}
-                {!!missing.length && (
-                  <div>
-                    <p className="text-xs uppercase text-amber-500/80">! Missing from JD</p>
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {missing.map(s => <Badge key={s} variant="outline" className="rounded-full text-[10px] border-amber-500/30 text-amber-500">{s}</Badge>)}
+                  {!!open.skill_gaps?.length && (
+                    <div>
+                      <p className="text-xs uppercase text-muted-foreground">
+                        AI-flagged skill gaps
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {open.skill_gaps.map((s) => (
+                          <Badge key={s} variant="secondary" className="rounded-full text-[10px]">
+                            {s}
+                          </Badge>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
-
-                <div>
-                  <p className="text-xs uppercase text-muted-foreground">All candidate skills</p>
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {candSkills.map((s: string) => <Badge key={s} variant="outline" className="rounded-full text-[10px] border-gold/30 text-gold/80">{s}</Badge>)}
-                  </div>
-                </div>
-                {!!open.skill_gaps?.length && (
+                  )}
                   <div>
-                    <p className="text-xs uppercase text-muted-foreground">AI-flagged skill gaps</p>
-                    <div className="mt-2 flex flex-wrap gap-1">{open.skill_gaps.map(s => <Badge key={s} variant="secondary" className="rounded-full text-[10px]">{s}</Badge>)}</div>
+                    <Button
+                      onClick={() => runSummary(open.id)}
+                      disabled={loadingSummary}
+                      className="rounded-full bg-gold-soft text-gold border border-gold hover:bg-gold/20"
+                    >
+                      {loadingSummary ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Sparkles className="mr-2 h-4 w-4" />
+                      )}
+                      AI recruiter brief
+                    </Button>
+                    {summary && (
+                      <p className="mt-3 rounded-xl border border-gold/30 bg-card/40 p-4 text-sm whitespace-pre-wrap">
+                        {summary}
+                      </p>
+                    )}
                   </div>
-                )}
-                <div>
-                  <Button onClick={() => runSummary(open.id)} disabled={loadingSummary} className="rounded-full bg-gold-soft text-gold border border-gold hover:bg-gold/20">
-                    {loadingSummary ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                    AI recruiter brief
-                  </Button>
-                  {summary && <p className="mt-3 rounded-xl border border-gold/30 bg-card/40 p-4 text-sm whitespace-pre-wrap">{summary}</p>}
                 </div>
-              </div>
-            );
-          })()}
+              );
+            })()}
         </SheetContent>
       </Sheet>
     </RecruiterShell>
@@ -293,11 +467,17 @@ function BreakdownBar({ label, value, hint }: { label: string; value: number; hi
   return (
     <div className="mb-2 last:mb-0">
       <div className="flex items-baseline justify-between text-[11px]">
-        <span className="text-muted-foreground">{label}{hint && <span className="ml-2 text-muted-foreground/70">{hint}</span>}</span>
+        <span className="text-muted-foreground">
+          {label}
+          {hint && <span className="ml-2 text-muted-foreground/70">{hint}</span>}
+        </span>
         <span className="font-display text-gold">{value}</span>
       </div>
       <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-card/60">
-        <div className={`h-full ${tone}`} style={{ width: `${Math.max(0, Math.min(100, value))}%` }} />
+        <div
+          className={`h-full ${tone}`}
+          style={{ width: `${Math.max(0, Math.min(100, value))}%` }}
+        />
       </div>
     </div>
   );

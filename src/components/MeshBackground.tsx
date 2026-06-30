@@ -3,7 +3,10 @@ import crystalBg from "@/assets/crystal_bg.png.asset.json";
 export function MeshBackground({ variant = "mint" }: { variant?: "mint" | "constellation" }) {
   if (variant === "constellation") {
     return (
-      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-constellation">
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-constellation"
+      >
         <div
           className="absolute inset-0 bg-cover bg-center opacity-90"
           style={{ backgroundImage: `url(${crystalBg.url})` }}

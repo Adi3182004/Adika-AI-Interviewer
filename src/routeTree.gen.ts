@@ -19,6 +19,7 @@ import { Route as AuthenticatedRecruiterRouteRouteImport } from './routes/_authe
 import { Route as AuthenticatedCandidateRouteRouteImport } from './routes/_authenticated/candidate/route'
 import { Route as AuthenticatedRecruiterIndexRouteImport } from './routes/_authenticated/recruiter/index'
 import { Route as AuthenticatedCandidateIndexRouteImport } from './routes/_authenticated/candidate/index'
+import { Route as AuthenticatedRecruiterCompareRouteImport } from './routes/_authenticated/recruiter/compare'
 import { Route as AuthenticatedRecruiterSettingsIndexRouteImport } from './routes/_authenticated/recruiter/settings/index'
 import { Route as AuthenticatedRecruiterPipelineIndexRouteImport } from './routes/_authenticated/recruiter/pipeline/index'
 import { Route as AuthenticatedRecruiterJobsIndexRouteImport } from './routes/_authenticated/recruiter/jobs/index'
@@ -91,6 +92,12 @@ const AuthenticatedCandidateIndexRoute =
     id: '/',
     path: '/',
     getParentRoute: () => AuthenticatedCandidateRouteRoute,
+  } as any)
+const AuthenticatedRecruiterCompareRoute =
+  AuthenticatedRecruiterCompareRouteImport.update({
+    id: '/compare',
+    path: '/compare',
+    getParentRoute: () => AuthenticatedRecruiterRouteRoute,
   } as any)
 const AuthenticatedRecruiterSettingsIndexRoute =
   AuthenticatedRecruiterSettingsIndexRouteImport.update({
@@ -215,6 +222,7 @@ export interface FileRoutesByFullPath {
   '/recruiter': typeof AuthenticatedRecruiterRouteRouteWithChildren
   '/jobs/$id': typeof JobsIdRoute
   '/recruiter/demo': typeof RecruiterDemoRoute
+  '/recruiter/compare': typeof AuthenticatedRecruiterCompareRoute
   '/candidate/': typeof AuthenticatedCandidateIndexRoute
   '/recruiter/': typeof AuthenticatedRecruiterIndexRoute
   '/candidate/interviews/$id': typeof AuthenticatedCandidateInterviewsIdRoute
@@ -243,6 +251,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/jobs/$id': typeof JobsIdRoute
   '/recruiter/demo': typeof RecruiterDemoRoute
+  '/recruiter/compare': typeof AuthenticatedRecruiterCompareRoute
   '/candidate': typeof AuthenticatedCandidateIndexRoute
   '/recruiter': typeof AuthenticatedRecruiterIndexRoute
   '/candidate/interviews/$id': typeof AuthenticatedCandidateInterviewsIdRoute
@@ -275,6 +284,7 @@ export interface FileRoutesById {
   '/_authenticated/recruiter': typeof AuthenticatedRecruiterRouteRouteWithChildren
   '/jobs/$id': typeof JobsIdRoute
   '/recruiter/demo': typeof RecruiterDemoRoute
+  '/_authenticated/recruiter/compare': typeof AuthenticatedRecruiterCompareRoute
   '/_authenticated/candidate/': typeof AuthenticatedCandidateIndexRoute
   '/_authenticated/recruiter/': typeof AuthenticatedRecruiterIndexRoute
   '/_authenticated/candidate/interviews/$id': typeof AuthenticatedCandidateInterviewsIdRoute
@@ -307,6 +317,7 @@ export interface FileRouteTypes {
     | '/recruiter'
     | '/jobs/$id'
     | '/recruiter/demo'
+    | '/recruiter/compare'
     | '/candidate/'
     | '/recruiter/'
     | '/candidate/interviews/$id'
@@ -335,6 +346,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/jobs/$id'
     | '/recruiter/demo'
+    | '/recruiter/compare'
     | '/candidate'
     | '/recruiter'
     | '/candidate/interviews/$id'
@@ -366,6 +378,7 @@ export interface FileRouteTypes {
     | '/_authenticated/recruiter'
     | '/jobs/$id'
     | '/recruiter/demo'
+    | '/_authenticated/recruiter/compare'
     | '/_authenticated/candidate/'
     | '/_authenticated/recruiter/'
     | '/_authenticated/candidate/interviews/$id'
@@ -469,6 +482,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/candidate/'
       preLoaderRoute: typeof AuthenticatedCandidateIndexRouteImport
       parentRoute: typeof AuthenticatedCandidateRouteRoute
+    }
+    '/_authenticated/recruiter/compare': {
+      id: '/_authenticated/recruiter/compare'
+      path: '/compare'
+      fullPath: '/recruiter/compare'
+      preLoaderRoute: typeof AuthenticatedRecruiterCompareRouteImport
+      parentRoute: typeof AuthenticatedRecruiterRouteRoute
     }
     '/_authenticated/recruiter/settings/': {
       id: '/_authenticated/recruiter/settings/'
@@ -651,6 +671,7 @@ const AuthenticatedCandidateRouteRouteWithChildren =
   )
 
 interface AuthenticatedRecruiterRouteRouteChildren {
+  AuthenticatedRecruiterCompareRoute: typeof AuthenticatedRecruiterCompareRoute
   AuthenticatedRecruiterIndexRoute: typeof AuthenticatedRecruiterIndexRoute
   AuthenticatedRecruiterPipelineIdRoute: typeof AuthenticatedRecruiterPipelineIdRoute
   AuthenticatedRecruiterAnalyticsIndexRoute: typeof AuthenticatedRecruiterAnalyticsIndexRoute
@@ -663,6 +684,7 @@ interface AuthenticatedRecruiterRouteRouteChildren {
 
 const AuthenticatedRecruiterRouteRouteChildren: AuthenticatedRecruiterRouteRouteChildren =
   {
+    AuthenticatedRecruiterCompareRoute: AuthenticatedRecruiterCompareRoute,
     AuthenticatedRecruiterIndexRoute: AuthenticatedRecruiterIndexRoute,
     AuthenticatedRecruiterPipelineIdRoute:
       AuthenticatedRecruiterPipelineIdRoute,
@@ -712,3 +734,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

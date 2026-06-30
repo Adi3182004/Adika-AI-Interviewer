@@ -10,7 +10,7 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
-import { reportLovableError } from "../lib/lovable-error-reporting";
+import { reportAdikaError } from "../lib/adika-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -38,21 +38,31 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
   useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
+    reportAdikaError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
   return (
     <div className="bg-mesh flex min-h-screen items-center justify-center px-4">
       <div className="glass max-w-md rounded-2xl p-10 text-center shadow-luxe">
         <h1 className="font-display text-3xl">Something went sideways</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Try again, or head back to the homepage.</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Try again, or head back to the homepage.
+        </p>
         <div className="mt-6 flex justify-center gap-2">
           <button
-            onClick={() => { router.invalidate(); reset(); }}
+            onClick={() => {
+              router.invalidate();
+              reset();
+            }}
             className="rounded-full bg-foreground px-5 py-2 text-sm text-background hover:opacity-90"
           >
             Try again
           </button>
-          <a href="/" className="rounded-full border border-border px-5 py-2 text-sm hover:bg-accent/40">Go home</a>
+          <a
+            href="/"
+            className="rounded-full border border-border px-5 py-2 text-sm hover:bg-accent/40"
+          >
+            Go home
+          </a>
         </div>
       </div>
     </div>
@@ -65,9 +75,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Adika AI — Hiring Intelligence Ecosystem" },
-      { name: "description", content: "AI-powered career intelligence and hiring decision platform for candidates and recruiters." },
+      {
+        name: "description",
+        content:
+          "AI-powered career intelligence and hiring decision platform for candidates and recruiters.",
+      },
       { property: "og:title", content: "Adika AI — Hiring Intelligence Ecosystem" },
-      { property: "og:description", content: "One intelligence layer powering candidate growth and recruiter decisions." },
+      {
+        property: "og:description",
+        content: "One intelligence layer powering candidate growth and recruiter decisions.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -75,7 +92,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap",
+      },
     ],
   }),
   shellComponent: RootShell,
@@ -87,8 +107,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <head><HeadContent /></head>
-      <body>{children}<Scripts /></body>
+      <head>
+        <HeadContent />
+      </head>
+      <body>
+        {children}
+        <Scripts />
+      </body>
     </html>
   );
 }
@@ -103,7 +128,9 @@ function RootComponent() {
       router.invalidate();
       if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
     });
-    return () => { data.subscription.unsubscribe(); };
+    return () => {
+      data.subscription.unsubscribe();
+    };
   }, [queryClient, router]);
 
   return (

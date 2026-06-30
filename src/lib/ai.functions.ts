@@ -2,19 +2,19 @@ import { createServerFn } from "@tanstack/react-start";
 import { generateText, Output } from "ai";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { createLovableAiGatewayProvider } from "./ai-gateway.server";
+import { createAdikaAiGatewayProvider } from "./ai-gateway.server";
 
 const MODEL = "google/gemini-3-flash-preview";
 
 function gateway() {
-  const key = process.env.LOVABLE_API_KEY;
-  if (!key) throw new Error("Missing LOVABLE_API_KEY");
-  return createLovableAiGatewayProvider(key)(MODEL);
+  const key = process.env.ADIKA_API_KEY || process.env.LOVABLE_API_KEY;
+  if (!key) throw new Error("Missing ADIKA_API_KEY");
+  return createAdikaAiGatewayProvider(key)(MODEL);
 }
 
 async function jsonCall<T = any>(prompt: string, fallback: T): Promise<T> {
-  const key = process.env.LOVABLE_API_KEY;
-  if (!key) throw new Error("Missing LOVABLE_API_KEY");
+  const key = process.env.ADIKA_API_KEY || process.env.LOVABLE_API_KEY;
+  if (!key) throw new Error("Missing ADIKA_API_KEY");
   const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
@@ -27,11 +27,18 @@ async function jsonCall<T = any>(prompt: string, fallback: T): Promise<T> {
   if (!res.ok) throw new Error(`AI call failed [${res.status}]`);
   const json = await res.json();
   let txt: string = json.choices?.[0]?.message?.content ?? "";
-  txt = txt.trim().replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+  txt = txt
+    .trim()
+    .replace(/^```(?:json)?/i, "")
+    .replace(/```$/, "")
+    .trim();
   const m = txt.match(/\{[\s\S]*\}/);
-  try { return JSON.parse(m ? m[0] : txt) as T; } catch { return fallback; }
+  try {
+    return JSON.parse(m ? m[0] : txt) as T;
+  } catch {
+    return fallback;
+  }
 }
-
 
 // ------------- RESUME ANALYSIS -------------
 export const analyzeResume = createServerFn({ method: "POST" })
@@ -39,10 +46,14 @@ export const analyzeResume = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ resumeId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("Missing LOVABLE_API_KEY");
+    const key = process.env.ADIKA_API_KEY || process.env.LOVABLE_API_KEY;
+    if (!key) throw new Error("Missing ADIKA_API_KEY");
     const { data: resume, error } = await supabase
-      .from("resumes").select("*").eq("id", data.resumeId).eq("user_id", userId).single();
+      .from("resumes")
+      .select("*")
+      .eq("id", data.resumeId)
+      .eq("user_id", userId)
+      .single();
     if (error || !resume) throw new Error("Resume not found");
 
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -50,26 +61,43 @@ export const analyzeResume = createServerFn({ method: "POST" })
       headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
       body: JSON.stringify({
         model: MODEL,
-        messages: [{
-          role: "user",
-          content: `You are an ATS auditor. Score this resume (0-100), extract skills (lowercase, deduped), and give per-section feedback for Summary, Experience, Education, Skills, Projects. Return JSON only.\n\nRESUME:\n${JSON.stringify(resume.content)}`,
-        }],
+        messages: [
+          {
+            role: "user",
+            content: `You are an ATS auditor. Score this resume (0-100), extract skills (lowercase, deduped), and give per-section feedback for Summary, Experience, Education, Skills, Projects. Return JSON only.\n\nRESUME:\n${JSON.stringify(resume.content)}`,
+          },
+        ],
         response_format: {
           type: "json_schema",
           json_schema: {
-            name: "ats", strict: true,
+            name: "ats",
+            strict: true,
             schema: {
-              type: "object", additionalProperties: false,
+              type: "object",
+              additionalProperties: false,
               required: ["ats_score", "parsed_skills", "feedback"],
               properties: {
                 ats_score: { type: "number" },
                 parsed_skills: { type: "array", items: { type: "string" } },
                 feedback: {
-                  type: "object", additionalProperties: false,
+                  type: "object",
+                  additionalProperties: false,
                   required: ["summary", "sections"],
                   properties: {
                     summary: { type: "string" },
-                    sections: { type: "array", items: { type: "object", additionalProperties: false, required: ["name","score","tip"], properties: { name: { type: "string" }, score: { type: "number" }, tip: { type: "string" } } } },
+                    sections: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        additionalProperties: false,
+                        required: ["name", "score", "tip"],
+                        properties: {
+                          name: { type: "string" },
+                          score: { type: "number" },
+                          tip: { type: "string" },
+                        },
+                      },
+                    },
                   },
                 },
               },
@@ -82,11 +110,14 @@ export const analyzeResume = createServerFn({ method: "POST" })
     const json = await res.json();
     const output = JSON.parse(json.choices?.[0]?.message?.content ?? "{}");
 
-    await supabase.from("resumes").update({
-      ats_score: Math.round(Number(output.ats_score) || 0),
-      parsed_skills: output.parsed_skills,
-      ats_feedback: output.feedback,
-    }).eq("id", data.resumeId);
+    await supabase
+      .from("resumes")
+      .update({
+        ats_score: Math.round(Number(output.ats_score) || 0),
+        parsed_skills: output.parsed_skills,
+        ats_feedback: output.feedback,
+      })
+      .eq("id", data.resumeId);
 
     return output;
   });
@@ -94,11 +125,15 @@ export const analyzeResume = createServerFn({ method: "POST" })
 // ------------- IMPROVE RESUME SECTION -------------
 export const improveResumeSection = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({
-    section: z.string(),
-    current: z.string(),
-    role: z.string().optional(),
-  }).parse(d))
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        section: z.string(),
+        current: z.string(),
+        role: z.string().optional(),
+      })
+      .parse(d),
+  )
   .handler(async ({ data }) => {
     const { text } = await generateText({
       model: gateway(),
@@ -110,10 +145,14 @@ export const improveResumeSection = createServerFn({ method: "POST" })
 // ------------- MATCH JOB -------------
 export const matchJob = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({
-    jobId: z.string().uuid(),
-    resumeId: z.string().uuid(),
-  }).parse(d))
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        jobId: z.string().uuid(),
+        resumeId: z.string().uuid(),
+      })
+      .parse(d),
+  )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const [{ data: job }, { data: resume }] = await Promise.all([
@@ -140,16 +179,24 @@ export const matchJob = createServerFn({ method: "POST" })
 // ------------- INTERVIEW: NEXT TURN -------------
 // 10 adaptive questions, company + role + experience + JD aware, inline scoring + feedback per answer.
 const COMPANY_PLAYBOOKS: Record<string, string> = {
-  amazon: "Optimize for Leadership Principles (Customer Obsession, Ownership, Dive Deep, Bias for Action). Mix 1 LP behavioral per 2 technical. Expect scale + cost trade-offs.",
-  google: "Emphasize algorithmic rigor, system design at planet scale, and 'Googleyness'. Probe data structures, complexity analysis, and ambiguity handling.",
+  amazon:
+    "Optimize for Leadership Principles (Customer Obsession, Ownership, Dive Deep, Bias for Action). Mix 1 LP behavioral per 2 technical. Expect scale + cost trade-offs.",
+  google:
+    "Emphasize algorithmic rigor, system design at planet scale, and 'Googleyness'. Probe data structures, complexity analysis, and ambiguity handling.",
   meta: "Move-fast culture. Product-sense + technical depth. For engineering, expect coding + design + behavioral (drive, conflict resolution).",
-  apple: "Cross-functional collaboration, polish, attention to detail. Expect domain depth (silicon, OS, ML, design) and trade-off discussions.",
-  microsoft: "Growth mindset, customer-driven design, and 'one Microsoft' collaboration. Mix coding, design, and impact stories.",
-  netflix: "Keeper test culture. Senior-only bar. Expect freedom-and-responsibility framing, high-judgment decisions, and deep technical ownership.",
-  adobe: "Creativity meets engineering. Probe product thinking, performance optimization, and customer empathy. For data/analytics: storytelling + statistical rigor.",
+  apple:
+    "Cross-functional collaboration, polish, attention to detail. Expect domain depth (silicon, OS, ML, design) and trade-off discussions.",
+  microsoft:
+    "Growth mindset, customer-driven design, and 'one Microsoft' collaboration. Mix coding, design, and impact stories.",
+  netflix:
+    "Keeper test culture. Senior-only bar. Expect freedom-and-responsibility framing, high-judgment decisions, and deep technical ownership.",
+  adobe:
+    "Creativity meets engineering. Probe product thinking, performance optimization, and customer empathy. For data/analytics: storytelling + statistical rigor.",
   uber: "Marketplace dynamics, real-time systems, geo-distributed design. Expect operational excellence questions.",
-  airbnb: "Design-led engineering. Probe API design, trust/safety thinking, and inclusive product judgment.",
-  stripe: "Developer-empathy and API ergonomics. Distributed systems, idempotency, money correctness, and writing quality.",
+  airbnb:
+    "Design-led engineering. Probe API design, trust/safety thinking, and inclusive product judgment.",
+  stripe:
+    "Developer-empathy and API ergonomics. Distributed systems, idempotency, money correctness, and writing quality.",
 };
 function companyHint(name?: string | null): string {
   if (!name) return "Use a generalist top-tier tech bar.";
@@ -161,28 +208,44 @@ function companyHint(name?: string | null): string {
 }
 function expHint(level?: string | null): string {
   switch ((level ?? "").toLowerCase()) {
-    case "fresher": return "Fresher (0–2y). Heavier on fundamentals, projects, internships, learning velocity. Avoid deep production war-stories.";
-    case "junior":  return "Junior (2–4y). Expect ownership of features, debugging real systems, and growing system-design intuition.";
-    case "mid":     return "Mid (4–7y). Expect end-to-end ownership, trade-off articulation, mentoring signals, and system design.";
-    case "senior":  return "Senior (7+y). Expect architecture, cross-team influence, hiring/standards, and ambiguous-problem decomposition.";
-    default:        return level ? `Custom: ${level}.` : "Calibrate to a mid-level bar by default.";
+    case "fresher":
+      return "Fresher (0–2y). Heavier on fundamentals, projects, internships, learning velocity. Avoid deep production war-stories.";
+    case "junior":
+      return "Junior (2–4y). Expect ownership of features, debugging real systems, and growing system-design intuition.";
+    case "mid":
+      return "Mid (4–7y). Expect end-to-end ownership, trade-off articulation, mentoring signals, and system design.";
+    case "senior":
+      return "Senior (7+y). Expect architecture, cross-team influence, hiring/standards, and ambiguous-problem decomposition.";
+    default:
+      return level ? `Custom: ${level}.` : "Calibrate to a mid-level bar by default.";
   }
 }
 
 export const interviewTurn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({
-    sessionId: z.string().uuid(),
-    userAnswer: z.string().optional(),
-  }).parse(d))
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        sessionId: z.string().uuid(),
+        userAnswer: z.string().optional(),
+      })
+      .parse(d),
+  )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { data: session } = await supabase
-      .from("interview_sessions").select("*").eq("id", data.sessionId).eq("candidate_id", userId).single();
+      .from("interview_sessions")
+      .select("*")
+      .eq("id", data.sessionId)
+      .eq("candidate_id", userId)
+      .single();
     if (!session) throw new Error("Session not found");
 
     const { data: messages } = await supabase
-      .from("interview_messages").select("*").eq("session_id", data.sessionId).order("created_at");
+      .from("interview_messages")
+      .select("*")
+      .eq("session_id", data.sessionId)
+      .order("created_at");
 
     const company = (session as any).company as string | null;
     const experience = (session as any).experience_level as string | null;
@@ -192,7 +255,9 @@ export const interviewTurn = createServerFn({ method: "POST" })
       `EXPERIENCE: ${expHint(experience ?? session.difficulty)}`,
       `COMPANY: ${company ?? "Generic top-tier"} — ${companyHint(company)}`,
       jd ? `JOB DESCRIPTION:\n${jd.slice(0, 2000)}` : "",
-    ].filter(Boolean).join("\n");
+    ]
+      .filter(Boolean)
+      .join("\n");
 
     const MAX_QUESTIONS = 10;
     const msgs = messages ?? [];
@@ -209,11 +274,19 @@ export const interviewTurn = createServerFn({ method: "POST" })
     let userFeedback: string | null = null;
     const hasPendingQuestion = assistantCount > answeredCount;
     if (data.userAnswer && hasPendingQuestion) {
-      const lastQ = [...msgs].reverse().find((m: { role: string }) => m.role === "assistant")?.content ?? "";
-      const ev = await jsonCall(`You are a senior interviewer grading like a professional teacher.\n${contextHeader}\nQUESTION: ${lastQ}\nANSWER: ${data.userAnswer}\n\nReturn ONLY JSON with this exact shape:\n{"score": number 0-100, "signals": {"clarity": number, "technical": number, "depth": number}, "feedback": "1-2 sentences", "what_was_good": ["..."], "what_to_improve": ["..."], "ideal_answer_sketch": "3 sentences"}`, {
-        score: 60, signals: { clarity: 60, technical: 60, depth: 60 },
-        feedback: "Answer recorded.", what_was_good: [], what_to_improve: [], ideal_answer_sketch: "",
-      });
+      const lastQ =
+        [...msgs].reverse().find((m: { role: string }) => m.role === "assistant")?.content ?? "";
+      const ev = await jsonCall(
+        `You are a senior interviewer grading like a professional teacher.\n${contextHeader}\nQUESTION: ${lastQ}\nANSWER: ${data.userAnswer}\n\nReturn ONLY JSON with this exact shape:\n{"score": number 0-100, "signals": {"clarity": number, "technical": number, "depth": number}, "feedback": "1-2 sentences", "what_was_good": ["..."], "what_to_improve": ["..."], "ideal_answer_sketch": "3 sentences"}`,
+        {
+          score: 60,
+          signals: { clarity: 60, technical: 60, depth: 60 },
+          feedback: "Answer recorded.",
+          what_was_good: [],
+          what_to_improve: [],
+          ideal_answer_sketch: "",
+        },
+      );
       userScore = Number(ev.score) || 0;
       userFeedback = String(ev.feedback ?? "");
       await supabase.from("interview_messages").insert({
@@ -231,29 +304,45 @@ export const interviewTurn = createServerFn({ method: "POST" })
       });
     }
 
-    const answeredAfter = answeredCount + ((data.userAnswer && hasPendingQuestion) ? 1 : 0);
+    const answeredAfter = answeredCount + (data.userAnswer && hasPendingQuestion ? 1 : 0);
     const isFinal = answeredAfter >= MAX_QUESTIONS;
 
     if (isFinal) {
       const { data: allMsgs } = await supabase
-        .from("interview_messages").select("*").eq("session_id", data.sessionId).order("created_at");
-      const fin = await jsonCall(`Summarize this 10-question interview for ${session.role_target}${company ? ` at ${company}` : ""}. Return ONLY JSON: {"overall_score": number 0-100, "readiness_score": number 0-100, "strengths": ["3-5 items"], "gaps": ["3-5 skills"], "summary": "3 sentences like a teacher's report card"}.\n\n${contextHeader}\n\nTRANSCRIPT:\n${(allMsgs || []).map(m => `${m.role.toUpperCase()}: ${m.content}`).join("\n")}`, {
-        overall_score: 60, readiness_score: 60, strengths: [], gaps: [], summary: "",
-      });
+        .from("interview_messages")
+        .select("*")
+        .eq("session_id", data.sessionId)
+        .order("created_at");
+      const fin = await jsonCall(
+        `Summarize this 10-question interview for ${session.role_target}${company ? ` at ${company}` : ""}. Return ONLY JSON: {"overall_score": number 0-100, "readiness_score": number 0-100, "strengths": ["3-5 items"], "gaps": ["3-5 skills"], "summary": "3 sentences like a teacher's report card"}.\n\n${contextHeader}\n\nTRANSCRIPT:\n${(allMsgs || []).map((m) => `${m.role.toUpperCase()}: ${m.content}`).join("\n")}`,
+        {
+          overall_score: 60,
+          readiness_score: 60,
+          strengths: [],
+          gaps: [],
+          summary: "",
+        },
+      );
 
-      await supabase.from("interview_sessions").update({
-        status: "completed",
-        question_count: MAX_QUESTIONS,
-        overall_score: fin.overall_score,
-        readiness_score: fin.readiness_score,
-        strengths: fin.strengths,
-        gaps: fin.gaps,
-        summary: fin.summary,
-      }).eq("id", data.sessionId);
+      await supabase
+        .from("interview_sessions")
+        .update({
+          status: "completed",
+          question_count: MAX_QUESTIONS,
+          overall_score: fin.overall_score,
+          readiness_score: fin.readiness_score,
+          strengths: fin.strengths,
+          gaps: fin.gaps,
+          summary: fin.summary,
+        })
+        .eq("id", data.sessionId);
       if (fin.gaps?.length) {
         await supabase.from("learning_items").insert(
           fin.gaps.slice(0, 8).map((skill: string) => ({
-            candidate_id: userId, skill, source_session_id: data.sessionId, status: "todo",
+            candidate_id: userId,
+            skill,
+            source_session_id: data.sessionId,
+            status: "todo",
           })),
         );
       }
@@ -262,21 +351,29 @@ export const interviewTurn = createServerFn({ method: "POST" })
 
     // Don't generate another question if one is already pending unanswered, or we've hit the cap
     if (assistantCount >= MAX_QUESTIONS || hasPendingQuestion) {
-      await supabase.from("interview_sessions").update({ question_count: Math.min(assistantCount, MAX_QUESTIONS) }).eq("id", data.sessionId);
+      await supabase
+        .from("interview_sessions")
+        .update({ question_count: Math.min(assistantCount, MAX_QUESTIONS) })
+        .eq("id", data.sessionId);
       return { done: false, userScore, userFeedback };
     }
 
     // Generate next question — adaptive, company/role/experience tuned
-    const transcript = msgs.map(m => `${m.role.toUpperCase()}: ${m.content}`).join("\n");
+    const transcript = msgs.map((m) => `${m.role.toUpperCase()}: ${m.content}`).join("\n");
     const qNumber = assistantCount + 1;
     const { text: nextQ } = await generateText({
       model: gateway(),
       prompt: `You are conducting a real interview for the EXACT role "${session.role_target}"${company ? ` at ${company}` : ""}. This is question ${qNumber} of 10.\n${contextHeader}\n\nSTRICT RULES:\n- The question MUST be directly relevant to the day-to-day work, tools, concepts, and responsibilities of a "${session.role_target}". Do NOT ask questions from unrelated domains.\n- Use terminology, tools, and scenarios that a real "${session.role_target}" would face on the job.\n- ${company ? `Bias the framing / domain examples to ${company}'s actual products and known interview style.` : "Use realistic industry scenarios."}\n- Mix question types across the 10 (fundamentals, applied/case, scenario, behavioral) — but every single one must be ROLE-relevant.\n- Adapt difficulty to the candidate's prior answers.\n- Output ONLY the question text. No preamble, no numbering, no "Question ${qNumber}:" prefix.\n\nTRANSCRIPT SO FAR:\n${transcript || "(none yet — this is the opening question)"}${data.userAnswer ? `\nUSER: ${data.userAnswer}` : ""}`,
     });
     await supabase.from("interview_messages").insert({
-      session_id: data.sessionId, role: "assistant", content: nextQ.trim(),
+      session_id: data.sessionId,
+      role: "assistant",
+      content: nextQ.trim(),
     });
-    await supabase.from("interview_sessions").update({ question_count: qNumber }).eq("id", data.sessionId);
+    await supabase
+      .from("interview_sessions")
+      .update({ question_count: qNumber })
+      .eq("id", data.sessionId);
 
     return { done: false, question: nextQ.trim(), userScore, userFeedback };
   });
@@ -289,8 +386,11 @@ export const summarizeCandidate = createServerFn({ method: "POST" })
     const { supabase } = context;
     const { data: app } = await supabase
       .from("applications")
-      .select("*, resumes(*), profiles!applications_candidate_id_fkey(*), jobs!inner(title, recruiter_id, skills)")
-      .eq("id", data.applicationId).single();
+      .select(
+        "*, resumes(*), profiles!applications_candidate_id_fkey(*), jobs!inner(title, recruiter_id, skills)",
+      )
+      .eq("id", data.applicationId)
+      .single();
     if (!app) throw new Error("Application not found");
     const { text } = await generateText({
       model: gateway(),
@@ -302,7 +402,9 @@ export const summarizeCandidate = createServerFn({ method: "POST" })
 // ------------- UPLOAD & PARSE RESUME (PDF/DOCX/TXT base64 data URL) -------------
 const ResumeContentSchema = z.object({
   summary: z.string(),
-  experience: z.array(z.object({ company: z.string(), role: z.string(), period: z.string(), bullets: z.string() })),
+  experience: z.array(
+    z.object({ company: z.string(), role: z.string(), period: z.string(), bullets: z.string() }),
+  ),
   education: z.array(z.object({ school: z.string(), degree: z.string(), year: z.string() })),
   skills: z.array(z.string()),
   projects: z.array(z.object({ name: z.string(), description: z.string() })),
@@ -310,23 +412,31 @@ const ResumeContentSchema = z.object({
 
 export const uploadAndParseResume = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({
-    title: z.string().min(1).max(120),
-    fileName: z.string(),
-    fileType: z.string(),
-    fileDataUrl: z.string().startsWith("data:"),
-  }).parse(d))
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        title: z.string().min(1).max(120),
+        fileName: z.string(),
+        fileType: z.string(),
+        fileDataUrl: z.string().startsWith("data:"),
+      })
+      .parse(d),
+  )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("Missing LOVABLE_API_KEY");
+    const key = process.env.ADIKA_API_KEY || process.env.LOVABLE_API_KEY;
+    if (!key) throw new Error("Missing ADIKA_API_KEY");
 
     // Call gateway directly to send file content block
-    const isText = data.fileType.startsWith("text/") || data.fileName.toLowerCase().endsWith(".txt");
+    const isText =
+      data.fileType.startsWith("text/") || data.fileName.toLowerCase().endsWith(".txt");
     const isImage = data.fileType.startsWith("image/");
 
     const userContent: any[] = [
-      { type: "text", text: "Extract this resume into clean structured JSON. Use empty strings/arrays for missing fields. For experience.bullets, join achievement lines with newlines." },
+      {
+        type: "text",
+        text: "Extract this resume into clean structured JSON. Use empty strings/arrays for missing fields. For experience.bullets, join achievement lines with newlines.",
+      },
     ];
     if (isText) {
       // decode base64 text
@@ -336,7 +446,10 @@ export const uploadAndParseResume = createServerFn({ method: "POST" })
     } else if (isImage) {
       userContent.push({ type: "image_url", image_url: { url: data.fileDataUrl } });
     } else {
-      userContent.push({ type: "file", file: { filename: data.fileName, file_data: data.fileDataUrl } });
+      userContent.push({
+        type: "file",
+        file: { filename: data.fileName, file_data: data.fileDataUrl },
+      });
     }
 
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -356,10 +469,43 @@ export const uploadAndParseResume = createServerFn({ method: "POST" })
               required: ["summary", "experience", "education", "skills", "projects"],
               properties: {
                 summary: { type: "string" },
-                experience: { type: "array", items: { type: "object", additionalProperties: false, required: ["company","role","period","bullets"], properties: { company: { type: "string" }, role: { type: "string" }, period: { type: "string" }, bullets: { type: "string" } } } },
-                education: { type: "array", items: { type: "object", additionalProperties: false, required: ["school","degree","year"], properties: { school: { type: "string" }, degree: { type: "string" }, year: { type: "string" } } } },
+                experience: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    additionalProperties: false,
+                    required: ["company", "role", "period", "bullets"],
+                    properties: {
+                      company: { type: "string" },
+                      role: { type: "string" },
+                      period: { type: "string" },
+                      bullets: { type: "string" },
+                    },
+                  },
+                },
+                education: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    additionalProperties: false,
+                    required: ["school", "degree", "year"],
+                    properties: {
+                      school: { type: "string" },
+                      degree: { type: "string" },
+                      year: { type: "string" },
+                    },
+                  },
+                },
                 skills: { type: "array", items: { type: "string" } },
-                projects: { type: "array", items: { type: "object", additionalProperties: false, required: ["name","description"], properties: { name: { type: "string" }, description: { type: "string" } } } },
+                projects: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    additionalProperties: false,
+                    required: ["name", "description"],
+                    properties: { name: { type: "string" }, description: { type: "string" } },
+                  },
+                },
               },
             },
           },
@@ -375,13 +521,17 @@ export const uploadAndParseResume = createServerFn({ method: "POST" })
     const parsed = ResumeContentSchema.parse(JSON.parse(raw));
 
     const { data: existing } = await supabase.from("resumes").select("id").eq("user_id", userId);
-    const { data: inserted, error: insErr } = await supabase.from("resumes").insert({
-      user_id: userId,
-      title: data.title,
-      content: parsed as any,
-      parsed_skills: parsed.skills.map(s => s.toLowerCase()),
-      is_primary: !(existing && existing.length),
-    }).select().single();
+    const { data: inserted, error: insErr } = await supabase
+      .from("resumes")
+      .insert({
+        user_id: userId,
+        title: data.title,
+        content: parsed as any,
+        parsed_skills: parsed.skills.map((s) => s.toLowerCase()),
+        is_primary: !(existing && existing.length),
+      })
+      .select()
+      .single();
     if (insErr || !inserted) throw new Error(insErr?.message ?? "Insert failed");
 
     // Auto-run ATS analysis so the candidate immediately sees a score
@@ -391,26 +541,43 @@ export const uploadAndParseResume = createServerFn({ method: "POST" })
         headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
         body: JSON.stringify({
           model: MODEL,
-          messages: [{
-            role: "user",
-            content: `You are an ATS auditor. Score this resume (0-100), extract skills (lowercase, deduped), and give per-section feedback for Summary, Experience, Education, Skills, Projects. Return JSON only.\n\nRESUME:\n${JSON.stringify(parsed)}`,
-          }],
+          messages: [
+            {
+              role: "user",
+              content: `You are an ATS auditor. Score this resume (0-100), extract skills (lowercase, deduped), and give per-section feedback for Summary, Experience, Education, Skills, Projects. Return JSON only.\n\nRESUME:\n${JSON.stringify(parsed)}`,
+            },
+          ],
           response_format: {
             type: "json_schema",
             json_schema: {
-              name: "ats", strict: true,
+              name: "ats",
+              strict: true,
               schema: {
-                type: "object", additionalProperties: false,
+                type: "object",
+                additionalProperties: false,
                 required: ["ats_score", "parsed_skills", "feedback"],
                 properties: {
                   ats_score: { type: "number" },
                   parsed_skills: { type: "array", items: { type: "string" } },
                   feedback: {
-                    type: "object", additionalProperties: false,
+                    type: "object",
+                    additionalProperties: false,
                     required: ["summary", "sections"],
                     properties: {
                       summary: { type: "string" },
-                      sections: { type: "array", items: { type: "object", additionalProperties: false, required: ["name","score","tip"], properties: { name: { type: "string" }, score: { type: "number" }, tip: { type: "string" } } } },
+                      sections: {
+                        type: "array",
+                        items: {
+                          type: "object",
+                          additionalProperties: false,
+                          required: ["name", "score", "tip"],
+                          properties: {
+                            name: { type: "string" },
+                            score: { type: "number" },
+                            tip: { type: "string" },
+                          },
+                        },
+                      },
                     },
                   },
                 },
@@ -423,11 +590,16 @@ export const uploadAndParseResume = createServerFn({ method: "POST" })
         const aj = await atsRes.json();
         const atsRaw = aj.choices?.[0]?.message?.content ?? "{}";
         const ats = JSON.parse(atsRaw);
-        await supabase.from("resumes").update({
-          ats_score: Math.round(Number(ats.ats_score) || 0),
-          parsed_skills: Array.isArray(ats.parsed_skills) ? ats.parsed_skills : parsed.skills.map(s => s.toLowerCase()),
-          ats_feedback: ats.feedback,
-        }).eq("id", inserted.id);
+        await supabase
+          .from("resumes")
+          .update({
+            ats_score: Math.round(Number(ats.ats_score) || 0),
+            parsed_skills: Array.isArray(ats.parsed_skills)
+              ? ats.parsed_skills
+              : parsed.skills.map((s) => s.toLowerCase()),
+            ats_feedback: ats.feedback,
+          })
+          .eq("id", inserted.id);
       }
     } catch (e) {
       console.error("ATS auto-analysis failed", e);
@@ -439,23 +611,38 @@ export const uploadAndParseResume = createServerFn({ method: "POST" })
 // ------------- ROLE-TARGETED ANALYSIS (plus points / drawbacks) -------------
 export const analyzeResumeForRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({
-    resumeId: z.string().uuid(),
-    role: z.string().min(2).max(120),
-    company: z.string().max(120).optional(),
-    experienceLevel: z.string().min(1).max(60),
-    jobDescription: z.string().max(8000).optional(),
-  }).parse(d))
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        resumeId: z.string().uuid(),
+        role: z.string().min(2).max(120),
+        company: z.string().max(120).optional(),
+        experienceLevel: z.string().min(1).max(60),
+        jobDescription: z.string().max(8000).optional(),
+      })
+      .parse(d),
+  )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { data: resume } = await supabase.from("resumes").select("*").eq("id", data.resumeId).eq("user_id", userId).single();
+    const { data: resume } = await supabase
+      .from("resumes")
+      .select("*")
+      .eq("id", data.resumeId)
+      .eq("user_id", userId)
+      .single();
     if (!resume) throw new Error("Resume not found");
 
     const FeedbackSchema = z.object({
       role_fit_score: z.number().min(0).max(100),
       verdict: z.string(),
       plus_points: z.array(z.object({ title: z.string(), detail: z.string() })),
-      drawbacks: z.array(z.object({ title: z.string(), detail: z.string(), severity: z.enum(["low","medium","high"]) })),
+      drawbacks: z.array(
+        z.object({
+          title: z.string(),
+          detail: z.string(),
+          severity: z.enum(["low", "medium", "high"]),
+        }),
+      ),
       missing_skills: z.array(z.string()),
       action_items: z.array(z.string()),
       tailored_summary: z.string(),
@@ -466,24 +653,40 @@ export const analyzeResumeForRole = createServerFn({ method: "POST" })
       prompt: `You are a senior tech recruiter coaching a STUDENT/early-career candidate. Analyze this resume for the specific target role and produce honest, role-specific plus points and drawbacks.\n\nTARGET ROLE: ${data.role}\nTARGET COMPANY: ${data.company ?? "(any)"}\nCANDIDATE EXPERIENCE LEVEL: ${data.experienceLevel}\nJOB DESCRIPTION:\n${data.jobDescription ?? "(none provided — infer industry-standard expectations for the role)"}\n\nRESUME:\n${JSON.stringify(resume.content).slice(0, 6000)}\n\nReturn ONLY a JSON object (no markdown, no commentary) with EXACTLY this shape:\n{\n  "role_fit_score": number 0-100,\n  "verdict": "one sentence",\n  "plus_points": [{ "title": string, "detail": string }, ... 3-5 items],\n  "drawbacks": [{ "title": string, "detail": string, "severity": "low"|"medium"|"high" }, ... 3-6 items],\n  "missing_skills": [lowercase skill strings],\n  "action_items": [4-6 concrete 30-day actions],\n  "tailored_summary": "one rewritten resume summary"\n}`,
     });
 
-    const cleaned = text.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
+    const cleaned = text
+      .replace(/```json\s*/gi, "")
+      .replace(/```\s*/g, "")
+      .trim();
     const start = cleaned.search(/[\{]/);
     const end = cleaned.lastIndexOf("}");
     if (start === -1 || end === -1) throw new Error("AI did not return JSON");
     const output = FeedbackSchema.parse(JSON.parse(cleaned.slice(start, end + 1)));
 
-    await supabase.from("resumes").update({
-      role_target: data.role,
-      targeted_feedback: { ...output, company: data.company, experience_level: data.experienceLevel, generated_at: new Date().toISOString() } as any,
-    }).eq("id", data.resumeId);
+    await supabase
+      .from("resumes")
+      .update({
+        role_target: data.role,
+        targeted_feedback: {
+          ...output,
+          company: data.company,
+          experience_level: data.experienceLevel,
+          generated_at: new Date().toISOString(),
+        } as any,
+      })
+      .eq("id", data.resumeId);
 
     // Seed missing skills into learning items
     if (output.missing_skills?.length) {
-      const existing = await supabase.from("learning_items").select("skill").eq("candidate_id", userId);
-      const have = new Set((existing.data ?? []).map(r => r.skill.toLowerCase()));
-      const toInsert = output.missing_skills.filter(s => !have.has(s.toLowerCase())).slice(0, 6);
+      const existing = await supabase
+        .from("learning_items")
+        .select("skill")
+        .eq("candidate_id", userId);
+      const have = new Set((existing.data ?? []).map((r) => r.skill.toLowerCase()));
+      const toInsert = output.missing_skills.filter((s) => !have.has(s.toLowerCase())).slice(0, 6);
       if (toInsert.length) {
-        await supabase.from("learning_items").insert(toInsert.map(skill => ({ candidate_id: userId, skill, status: "todo" })));
+        await supabase
+          .from("learning_items")
+          .insert(toInsert.map((skill) => ({ candidate_id: userId, skill, status: "todo" })));
       }
     }
 
@@ -496,11 +699,16 @@ export const generateLearningRoadmap = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ itemId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { data: item } = await supabase.from("learning_items").select("*").eq("id", data.itemId).eq("candidate_id", userId).single();
+    const { data: item } = await supabase
+      .from("learning_items")
+      .select("*")
+      .eq("id", data.itemId)
+      .eq("candidate_id", userId)
+      .single();
     if (!item) throw new Error("Item not found");
 
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("Missing LOVABLE_API_KEY");
+    const key = process.env.ADIKA_API_KEY || process.env.LOVABLE_API_KEY;
+    if (!key) throw new Error("Missing ADIKA_API_KEY");
 
     const RoadmapSchema = z.object({
       skill: z.string(),
@@ -510,23 +718,36 @@ export const generateLearningRoadmap = createServerFn({ method: "POST" })
       hours_per_week: z.string().optional(),
       difficulty: z.string().optional(),
       prerequisites: z.array(z.string()),
-      phases: z.array(z.object({
-        week_range: z.string(),
-        day_range: z.string().optional(),
-        duration_days: z.number().optional(),
-        time_commitment: z.string().optional(),
-        title: z.string(),
-        goals: z.array(z.string()),
-        topics: z.array(z.string()),
-        daily_plan: z.array(z.object({
-          day: z.string(),
-          focus: z.string(),
-          time: z.string().optional(),
-        })).optional(),
-        project: z.string(),
-        project_time: z.string().optional(),
-        resources: z.array(z.object({ name: z.string(), type: z.string(), url: z.string().optional(), time: z.string().optional() })),
-      })),
+      phases: z.array(
+        z.object({
+          week_range: z.string(),
+          day_range: z.string().optional(),
+          duration_days: z.number().optional(),
+          time_commitment: z.string().optional(),
+          title: z.string(),
+          goals: z.array(z.string()),
+          topics: z.array(z.string()),
+          daily_plan: z
+            .array(
+              z.object({
+                day: z.string(),
+                focus: z.string(),
+                time: z.string().optional(),
+              }),
+            )
+            .optional(),
+          project: z.string(),
+          project_time: z.string().optional(),
+          resources: z.array(
+            z.object({
+              name: z.string(),
+              type: z.string(),
+              url: z.string().optional(),
+              time: z.string().optional(),
+            }),
+          ),
+        }),
+      ),
       milestones: z.array(z.string()),
       final_capstone: z.string(),
       capstone_time: z.string().optional(),
@@ -537,21 +758,29 @@ export const generateLearningRoadmap = createServerFn({ method: "POST" })
       headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
       body: JSON.stringify({
         model: MODEL,
-        messages: [{
-          role: "user",
-          content: `Build a STUDENT-FRIENDLY, time-explicit week-by-week learning roadmap to master "${item.skill}" from scratch to job-ready. Assume ~10-15 hours/week. Make timing crystal clear: total days, days per phase, a daily breakdown (e.g. "Day 1-2: ...", "Day 3: ..."), and time estimates on each project/resource (e.g. "~4 hours", "2 days"). 3-5 phases. Resource type must be one of: course, docs, book, video, article, practice. Return ONLY JSON:\n{\n  "skill": string,\n  "overview": string (2-3 sentences, beginner friendly),\n  "estimated_weeks": number,\n  "total_days": number,\n  "hours_per_week": string e.g. "10-12 hrs/week",\n  "difficulty": "Beginner"|"Intermediate"|"Advanced",\n  "prerequisites": [string],\n  "phases": [{\n    "week_range": string e.g. "Week 1-2",\n    "day_range": string e.g. "Day 1-14",\n    "duration_days": number,\n    "time_commitment": string e.g. "~20 hours total",\n    "title": string,\n    "goals": [string],\n    "topics": [string],\n    "daily_plan": [{ "day": string e.g. "Day 1-2", "focus": string, "time": string e.g. "3 hrs" }],\n    "project": string,\n    "project_time": string e.g. "~6 hours",\n    "resources": [{ "name": string, "type": string, "url": string, "time": string e.g. "2 hrs" }]\n  }],\n  "milestones": [string],\n  "final_capstone": string,\n  "capstone_time": string e.g. "1 week (~15 hours)"\n}`,
-        }],
+        messages: [
+          {
+            role: "user",
+            content: `Build a STUDENT-FRIENDLY, time-explicit week-by-week learning roadmap to master "${item.skill}" from scratch to job-ready. Assume ~10-15 hours/week. Make timing crystal clear: total days, days per phase, a daily breakdown (e.g. "Day 1-2: ...", "Day 3: ..."), and time estimates on each project/resource (e.g. "~4 hours", "2 days"). 3-5 phases. Resource type must be one of: course, docs, book, video, article, practice. Return ONLY JSON:\n{\n  "skill": string,\n  "overview": string (2-3 sentences, beginner friendly),\n  "estimated_weeks": number,\n  "total_days": number,\n  "hours_per_week": string e.g. "10-12 hrs/week",\n  "difficulty": "Beginner"|"Intermediate"|"Advanced",\n  "prerequisites": [string],\n  "phases": [{\n    "week_range": string e.g. "Week 1-2",\n    "day_range": string e.g. "Day 1-14",\n    "duration_days": number,\n    "time_commitment": string e.g. "~20 hours total",\n    "title": string,\n    "goals": [string],\n    "topics": [string],\n    "daily_plan": [{ "day": string e.g. "Day 1-2", "focus": string, "time": string e.g. "3 hrs" }],\n    "project": string,\n    "project_time": string e.g. "~6 hours",\n    "resources": [{ "name": string, "type": string, "url": string, "time": string e.g. "2 hrs" }]\n  }],\n  "milestones": [string],\n  "final_capstone": string,\n  "capstone_time": string e.g. "1 week (~15 hours)"\n}`,
+          },
+        ],
       }),
     });
     if (!res.ok) throw new Error(`Roadmap failed [${res.status}]`);
     const json = await res.json();
     const raw = json.choices?.[0]?.message?.content ?? "{}";
-    const cleaned = raw.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
+    const cleaned = raw
+      .replace(/```json\s*/gi, "")
+      .replace(/```\s*/g, "")
+      .trim();
     const start = cleaned.search(/[\{]/);
     const end = cleaned.lastIndexOf("}");
     if (start === -1 || end === -1) throw new Error("AI did not return JSON");
     const output = RoadmapSchema.parse(JSON.parse(cleaned.slice(start, end + 1)));
 
-    await supabase.from("learning_items").update({ roadmap: output as any }).eq("id", data.itemId);
+    await supabase
+      .from("learning_items")
+      .update({ roadmap: output as any })
+      .eq("id", data.itemId);
     return output;
   });

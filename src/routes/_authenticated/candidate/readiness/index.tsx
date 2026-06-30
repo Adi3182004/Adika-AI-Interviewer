@@ -1,6 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { Target, CheckCircle2, Circle, ArrowRight, Plus, Trash2, Pencil, Check, X } from "lucide-react";
+import {
+  Target,
+  CheckCircle2,
+  Circle,
+  ArrowRight,
+  Plus,
+  Trash2,
+  Pencil,
+  Check,
+  X,
+} from "lucide-react";
 import { CandidateShell } from "@/components/CandidateShell";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +25,7 @@ export const Route = createFileRoute("/_authenticated/candidate/readiness/")({
 const PILLARS = [
   { name: "Resume strength", score: 86, weight: 0.15 },
   { name: "Skill coverage", score: 71, weight: 0.25 },
-  { name: "Interview performance", score: 78, weight: 0.30 },
+  { name: "Interview performance", score: 78, weight: 0.3 },
   { name: "Communication", score: 84, weight: 0.15 },
   { name: "Domain knowledge", score: 68, weight: 0.15 },
 ];
@@ -49,7 +59,9 @@ function ReadinessPage() {
   };
   const saveEdit = () => {
     if (!editingId) return;
-    setItems((xs) => xs.map((x) => (x.id === editingId ? { ...x, label: editText.trim() || x.label } : x)));
+    setItems((xs) =>
+      xs.map((x) => (x.id === editingId ? { ...x, label: editText.trim() || x.label } : x)),
+    );
     setEditingId(null);
   };
   const addNew = () => {
@@ -65,14 +77,17 @@ function ReadinessPage() {
       <div className="grid gap-6 lg:grid-cols-[1fr_1.4fr]">
         <div className="glass rounded-2xl p-8 text-center">
           <Target className="mx-auto h-6 w-6 text-primary" />
-          <p className="mt-2 text-xs uppercase tracking-wider text-muted-foreground">Senior Backend · target</p>
+          <p className="mt-2 text-xs uppercase tracking-wider text-muted-foreground">
+            Senior Backend · target
+          </p>
           <p className="mt-2 font-display text-7xl">
             {overall}
             <span className="text-2xl text-muted-foreground">%</span>
           </p>
           <Badge className="mt-3 bg-primary/15 text-primary">On track · 7 / 10 sessions</Badge>
           <p className="mt-4 text-sm text-muted-foreground">
-            You're 9 points away from the typical bar for this role. Closing two pillars below would put you over.
+            You're 9 points away from the typical bar for this role. Closing two pillars below would
+            put you over.
           </p>
         </div>
 
@@ -84,7 +99,8 @@ function ReadinessPage() {
                 <div className="flex items-center justify-between text-sm">
                   <span>{p.name}</span>
                   <span className="text-muted-foreground">
-                    {p.score} <span className="text-[10px]">· weight {Math.round(p.weight * 100)}%</span>
+                    {p.score}{" "}
+                    <span className="text-[10px]">· weight {Math.round(p.weight * 100)}%</span>
                   </span>
                 </div>
                 <Progress value={p.score} className="mt-1 h-2" />
@@ -101,7 +117,10 @@ function ReadinessPage() {
             <Button size="sm" variant="ghost" onClick={() => setAdding((v) => !v)}>
               <Plus className="mr-1 h-3 w-3" /> Add task
             </Button>
-            <Link to="/candidate/interviews" className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+            <Link
+              to="/candidate/interviews"
+              className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+            >
               Start next session <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
@@ -116,8 +135,19 @@ function ReadinessPage() {
               onChange={(e) => setNewText(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && addNew()}
             />
-            <Button size="sm" onClick={addNew}>Add</Button>
-            <Button size="sm" variant="ghost" onClick={() => { setAdding(false); setNewText(""); }}>Cancel</Button>
+            <Button size="sm" onClick={addNew}>
+              Add
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setAdding(false);
+                setNewText("");
+              }}
+            >
+              Cancel
+            </Button>
           </div>
         )}
 
@@ -149,17 +179,31 @@ function ReadinessPage() {
                     onKeyDown={(e) => e.key === "Enter" && saveEdit()}
                     className="h-7"
                   />
-                  <Button size="sm" variant="ghost" onClick={saveEdit}><Check className="h-3 w-3" /></Button>
-                  <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}><X className="h-3 w-3" /></Button>
+                  <Button size="sm" variant="ghost" onClick={saveEdit}>
+                    <Check className="h-3 w-3" />
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>
+                    <X className="h-3 w-3" />
+                  </Button>
                 </div>
               ) : (
                 <>
-                  <span className={`flex-1 ${c.done ? "text-muted-foreground line-through" : ""}`}>{c.label}</span>
+                  <span className={`flex-1 ${c.done ? "text-muted-foreground line-through" : ""}`}>
+                    {c.label}
+                  </span>
                   <div className="flex items-center gap-1 opacity-0 transition group-hover:opacity-100">
-                    <button onClick={() => startEdit(c)} className="text-muted-foreground hover:text-primary" aria-label="Edit">
+                    <button
+                      onClick={() => startEdit(c)}
+                      className="text-muted-foreground hover:text-primary"
+                      aria-label="Edit"
+                    >
                       <Pencil className="h-3 w-3" />
                     </button>
-                    <button onClick={() => remove(c.id)} className="text-muted-foreground hover:text-destructive" aria-label="Delete">
+                    <button
+                      onClick={() => remove(c.id)}
+                      className="text-muted-foreground hover:text-destructive"
+                      aria-label="Delete"
+                    >
                       <Trash2 className="h-3 w-3" />
                     </button>
                   </div>

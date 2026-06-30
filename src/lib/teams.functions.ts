@@ -49,9 +49,16 @@ export const renameMyTeam = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ name: z.string().trim().min(2).max(80) }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { data: team } = await supabase.from("recruiter_teams").select("id").eq("owner_id", userId).maybeSingle();
+    const { data: team } = await supabase
+      .from("recruiter_teams")
+      .select("id")
+      .eq("owner_id", userId)
+      .maybeSingle();
     if (!team) throw new Error("Only the team owner can rename");
-    const { error } = await supabase.from("recruiter_teams").update({ name: data.name }).eq("id", team.id);
+    const { error } = await supabase
+      .from("recruiter_teams")
+      .update({ name: data.name })
+      .eq("id", team.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -59,11 +66,20 @@ export const renameMyTeam = createServerFn({ method: "POST" })
 export const inviteTeammate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({ email: z.string().email().toLowerCase(), role: z.enum(["member", "admin"]).default("member") }).parse(d),
+    z
+      .object({
+        email: z.string().email().toLowerCase(),
+        role: z.enum(["member", "admin"]).default("member"),
+      })
+      .parse(d),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { data: team } = await supabase.from("recruiter_teams").select("id").eq("owner_id", userId).maybeSingle();
+    const { data: team } = await supabase
+      .from("recruiter_teams")
+      .select("id")
+      .eq("owner_id", userId)
+      .maybeSingle();
     if (!team) throw new Error("Create a team first");
 
     const token = randomToken();
@@ -90,10 +106,18 @@ export const removeTeammate = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ userId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { data: team } = await supabase.from("recruiter_teams").select("id").eq("owner_id", userId).maybeSingle();
+    const { data: team } = await supabase
+      .from("recruiter_teams")
+      .select("id")
+      .eq("owner_id", userId)
+      .maybeSingle();
     if (!team) throw new Error("Only owner can remove members");
     if (data.userId === userId) throw new Error("Owners can't remove themselves");
-    const { error } = await supabase.from("team_members").delete().eq("team_id", team.id).eq("user_id", data.userId);
+    const { error } = await supabase
+      .from("team_members")
+      .delete()
+      .eq("team_id", team.id)
+      .eq("user_id", data.userId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -117,10 +141,16 @@ export const acceptInvite = createServerFn({ method: "POST" })
     // Add to team (idempotent)
     const { error: insErr } = await supabase
       .from("team_members")
-      .upsert({ team_id: invite.team_id, user_id: userId, role: invite.role }, { onConflict: "team_id,user_id" });
+      .upsert(
+        { team_id: invite.team_id, user_id: userId, role: invite.role },
+        { onConflict: "team_id,user_id" },
+      );
     if (insErr) throw new Error(insErr.message);
 
-    await supabaseAdmin.from("team_invites").update({ accepted_at: new Date().toISOString() }).eq("id", invite.id);
+    await supabaseAdmin
+      .from("team_invites")
+      .update({ accepted_at: new Date().toISOString() })
+      .eq("id", invite.id);
     return { teamName: (invite as any).recruiter_teams?.name as string };
   });
 
