@@ -248,6 +248,18 @@
   background-color: transparent;
 }
 
+/* Radix dialog close button in recruiter surfaces — keep the X visible
+ * against the dark background instead of relying on hover. */
+.recruiter > button[type="button"],
+.recruiter button.absolute.right-4.top-4 {
+  color: var(--color-foreground);
+  opacity: 0.85;
+}
+.recruiter > button[type="button"]:hover,
+.recruiter button.absolute.right-4.top-4:hover {
+  opacity: 1;
+}
+
 /* ---------- Recruiter dark-theme legibility safety net ----------
  * On the recruiter (dark) surface, any hardcoded dark text utility
  * (black / deep gray / deep purple / indigo / violet / slate / zinc)
