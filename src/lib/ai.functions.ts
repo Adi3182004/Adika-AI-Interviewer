@@ -288,20 +288,178 @@ function gateway() {
 async function jsonCall<T = any>(prompt: string, fallback: T): Promise<T> {
   const key = getApiKey();
   if (!key) {
-    if (prompt.includes("grading like a professional teacher")) {
-      const score = Math.floor(Math.random() * 20) + 75;
+    // Interview answer scoring (no real API key — use honest heuristic)
+    if (prompt.includes("SCORING CALIBRATION")) {
+      // Extract word count embedded in prompt: "CANDIDATE ANSWER (38 words):"
+      const wcMatch = prompt.match(/CANDIDATE ANSWER \((\d+) word/);
+      const wc = wcMatch ? parseInt(wcMatch[1], 10) : 0;
+
+      // Extract the actual question for context-aware feedback
+      const qMatch = prompt.match(/QUESTION: (.+?)(?:\n|CANDIDATE ANSWER)/s);
+      const question = qMatch ? qMatch[1].trim().toLowerCase() : "";
+
+      // Question type detection
+      const isBehavioral = /time|situation|conflict|disagree|challenge|tell me|describe a|how did you|have you ever/i.test(question);
+      const isSystem    = /design|architect|scale|system|microservice|distributed|deploy/i.test(question);
+      const isProcess   = /approach|handle|manage|versioning|test|clean|maintain|debug|optimize|security|ensure|best practice/i.test(question);
+      const isCoding    = /algorithm|complexity|code|implement|function|data structure/i.test(question);
+
+      // Tiny jitter so identical-length answers look slightly different
+      const j = (range = 6) => Math.floor(Math.random() * range) - Math.floor(range / 2);
+
+      let score: number, clarity: number, technical: number, depth: number;
+      let feedback: string, what_was_good: string[], what_to_improve: string[];
+
+      // ── Non-answer bucket (always harsh regardless of type) ───────────────
+      if (wc <= 3) {
+        score = 2; clarity = 2; technical = 2; depth = 2;
+        feedback = "This is a one-word or empty response — nothing to evaluate. Please write a real answer.";
+        what_was_good = [];
+        what_to_improve = ["Write 2-4 focused sentences that directly address the question."];
+
+      } else if (wc <= 8) {
+        score = 10 + j(4); clarity = 10; technical = 6; depth = 5;
+        feedback = "Too brief — this doesn't demonstrate any knowledge or reasoning.";
+        what_was_good = [];
+        what_to_improve = ["Write at least 2-3 complete sentences", "Explain your reasoning or approach", "Give at least one concrete detail"];
+
+      // ═══════════════════════════════════════════════════════════════════════
+      // BEHAVIORAL (STAR) — sweet spot: 40-80 words
+      // Written interviews reward concise, structured storytelling over verbose essays.
+      // ═══════════════════════════════════════════════════════════════════════
+      } else if (isBehavioral) {
+        if (wc <= 20) {
+          score = 28 + j(); clarity = 28; technical = 20; depth = 16;
+          feedback = "Mentions the topic but far too brief. Use the STAR structure: Situation, Action, Result.";
+          what_was_good = [];
+          what_to_improve = ["Set up the Situation in 1 sentence", "Describe your specific Action", "State the Result or outcome"];
+
+        } else if (wc <= 38) {
+          // Just under sweet spot — decent but incomplete
+          score = 60 + j(); clarity = 62; technical = 54; depth = 48;
+          feedback = "Covers the scenario but missing the outcome. Adding the result would bring this to 80+.";
+          what_was_good = ["Sets up the scenario", "On-topic and clear"];
+          what_to_improve = ["State the specific result or resolution", "Quantify the impact if possible (e.g. resolved in 1 day, team alignment achieved)", "Mention what you learned"];
+
+        } else if (wc <= 80) {
+          // ← BEHAVIORAL SWEET SPOT: 40-80 words. Concise STAR = top marks.
+          score = 85 + j(6); clarity = 84; technical = 78; depth = 76;
+          feedback = "Strong behavioral answer — covers the scenario, your approach, and the outcome concisely. This is the ideal length for written interviews.";
+          what_was_good = ["Concise and well-structured", "Covers scenario + action + result", "Shows collaboration and judgment"];
+          what_to_improve = ["Quantify the outcome if possible (e.g. team adopted it, delivered on time)", "Add 1 sentence on what you learned"];
+
+        } else if (wc <= 140) {
+          // Slightly over sweet spot — good content, a bit verbose
+          score = 78 + j(4); clarity = 76; technical = 74; depth = 72;
+          feedback = "Good behavioral answer with solid detail. For written interviews, aim to trim this by 20-30%: clarity over length.";
+          what_was_good = ["Covers the full scenario", "Shows ownership and problem-solving", "Good technical context"];
+          what_to_improve = ["Trim repetitive details — aim for 50-80 words", "Lead with the action, not the setup", "One specific outcome is more powerful than multiple vague ones"];
+
+        } else {
+          // Over-explaining — penalised
+          score = 68 + j(4); clarity = 65; technical = 68; depth = 70;
+          feedback = "Too long for a written interview. This reads more like a full essay than a focused answer — interviewers lose attention. Aim for 50-80 words.";
+          what_was_good = ["Shows depth of thinking", "Covers the scenario thoroughly"];
+          what_to_improve = ["Cut to 50-80 words — remove setup/background that isn't critical", "State the outcome in 1 clear sentence", "Written interviews reward precision, not volume"];
+        }
+
+      // ═══════════════════════════════════════════════════════════════════════
+      // TECHNICAL / PROCESS / SYSTEM / CODING — sweet spot: 35-75 words
+      // Brief, correct, and specific beats long and padded every time.
+      // ═══════════════════════════════════════════════════════════════════════
+      } else {
+        if (wc <= 20) {
+          score = 25 + j(); clarity = 25; technical = 18; depth = 14;
+          feedback = "Too brief — no reasoning or specifics shown. Write 3-5 focused sentences.";
+          what_was_good = [];
+          what_to_improve = ["Explain your approach with a reason", "Name at least one specific technique or tool", "Give one sentence of context from experience"];
+
+        } else if (wc <= 35) {
+          // Short but possibly decent — needs a bit more
+          score = 62 + j(); clarity = 62; technical = 56; depth = 48;
+          feedback = "On-topic but needs a bit more — mention a specific tool, decision, or trade-off to reach 80+.";
+          what_was_good = ["On-topic", "Clear and direct"];
+          what_to_improve = [
+            "Name 1-2 specific tools or techniques you rely on",
+            "Add one concrete example from a real project",
+            "Mention one trade-off or alternative you considered",
+          ];
+
+        } else if (wc <= 80) {
+          // ← TECHNICAL SWEET SPOT: 35-80 words. Concise + correct = top marks.
+          score = 89 + j(6); clarity = 87; technical = 84; depth = 80;
+          feedback = isProcess
+            ? "Solid, focused answer covering the key practices. This is the ideal length — precise and complete."
+            : isSystem
+              ? "Good design thinking in a concise format. Exactly the right length for a written interview."
+              : "Clear, on-topic, and the right length. Naming a specific tool or outcome would make it perfect.";
+          what_was_good = ["Right length for a written interview", "Covers the key concepts", "Clear and direct"];
+          what_to_improve = [
+            "Name one specific tool or framework you used (e.g. JWT, Redis, Nginx)",
+            "Add one concrete outcome from a real project",
+          ];
+
+        } else if (wc <= 130) {
+          // Good but starting to drift over ideal length
+          score = 75 + j(4); clarity = 74; technical = 72; depth = 68;
+          feedback = "Good answer, but slightly longer than ideal for written format. Aim to trim to 60-80 words — cut any background that isn't essential.";
+          what_was_good = ["Covers multiple key points", "Shows solid knowledge", "Technically accurate"];
+          what_to_improve = [
+            "Trim to 60-80 words — remove setup sentences",
+            "Lead with your answer, then justify briefly",
+            "One specific example beats three vague ones",
+          ];
+
+        } else if (wc <= 200) {
+          // Over-explaining — noticeable penalty
+          score = 65 + j(4); clarity = 62; technical = 70; depth = 66;
+          feedback = "Over-explained for a written interview. Interviewers prefer concise, precise answers (50-80 words). This length suggests you may be padding rather than thinking clearly.";
+          what_was_good = ["Shows knowledge breadth", "Technically on-point"];
+          what_to_improve = [
+            "Ruthlessly cut to 60-80 words",
+            "Start with your direct answer, not background context",
+            "Written interviews reward clarity and precision over volume",
+          ];
+
+        } else {
+          // Way too long — strong penalty
+          score = 52 + j(4); clarity = 50; technical = 62; depth = 64;
+          feedback = "Far too long — this reads like a blog post, not an interview answer. Cut to 60-80 words. Conciseness is itself a professional skill being evaluated.";
+          what_was_good = ["Clearly knowledgeable on the topic"];
+          what_to_improve = [
+            "Cut by 70% — keep only the core answer + one example",
+            "Write your answer in 1 sentence, then expand in 2-3 sentences max",
+            "Over-explaining signals poor communication skills in written interviews",
+          ];
+        }
+      }
+
+
+      // Clamp all values
+      score    = Math.min(100, Math.max(0, score));
+      clarity  = Math.min(100, Math.max(0, clarity));
+      technical = Math.min(100, Math.max(0, technical));
+      depth    = Math.min(100, Math.max(0, depth));
+
+      // Question-specific ideal answer sketch
+      let ideal_answer_sketch = "A strong answer directly addresses the question, provides a concrete real-world example, explains the reasoning and trade-offs, and concludes with the outcome or lesson learned.";
+      if (isBehavioral) {
+        ideal_answer_sketch = "Use the STAR format: briefly set the Situation, state your Task/role, describe the specific Actions you took (focus on technical reasoning and communication), then give the measurable Result and what you learned from the experience.";
+      } else if (isSystem) {
+        ideal_answer_sketch = "Describe your design decisions, explain WHY you chose this approach over alternatives, discuss trade-offs (scalability, consistency, cost, latency), and close with how it performed in production — ideally with metrics.";
+      } else if (isProcess) {
+        ideal_answer_sketch = "Explain your approach step-by-step with concrete examples from real projects. Mention the tools or patterns you rely on, how you handle edge cases, and a specific outcome where this approach made a measurable difference.";
+      } else if (isCoding) {
+        ideal_answer_sketch = "Walk through your thought process clearly, state the time and space complexity, call out edge cases you'd handle, and describe how you'd test and optimize the solution in a production codebase.";
+      }
+
       return {
         score,
-        signals: {
-          clarity: Math.floor(Math.random() * 20) + 75,
-          technical: Math.floor(Math.random() * 20) + 75,
-          depth: Math.floor(Math.random() * 20) + 75,
-        },
-        feedback: "Solid answer explaining the trade-offs clearly.",
-        what_was_good: ["Clear communication", "Demonstrated good understanding of the trade-offs"],
-        what_to_improve: ["Could expand more on real-world edge cases"],
-        ideal_answer_sketch:
-          "A comprehensive response should detail the architecture choice, explain performance metrics under stress, and mention monitoring plans.",
+        signals: { clarity, technical, depth },
+        feedback,
+        what_was_good,
+        what_to_improve,
+        ideal_answer_sketch,
       } as any;
     }
     if (prompt.includes("Summarize this 10-question interview")) {
@@ -345,7 +503,7 @@ async function jsonCall<T = any>(prompt: string, fallback: T): Promise<T> {
 // ------------- RESUME ANALYSIS -------------
 export const analyzeResume = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ resumeId: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ resumeId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { data: resume, error } = await supabase
@@ -485,7 +643,7 @@ export const analyzeResume = createServerFn({ method: "POST" })
 // ------------- IMPROVE RESUME SECTION -------------
 export const improveResumeSection = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         section: z.string(),
@@ -510,7 +668,7 @@ export const improveResumeSection = createServerFn({ method: "POST" })
 // ------------- MATCH JOB -------------
 export const matchJob = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         jobId: z.string().uuid(),
@@ -599,7 +757,7 @@ function expHint(level?: string | null): string {
 
 export const interviewTurn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         sessionId: z.string().uuid(),
@@ -652,14 +810,45 @@ export const interviewTurn = createServerFn({ method: "POST" })
     if (data.userAnswer && hasPendingQuestion) {
       const lastQ =
         [...msgs].reverse().find((m: { role: string }) => m.role === "assistant")?.content ?? "";
+      const wordCount = data.userAnswer.trim().split(/\s+/).length;
       const ev = await jsonCall(
-        `You are a senior interviewer grading like a professional teacher.\n${contextHeader}\nQUESTION: ${lastQ}\nANSWER: ${data.userAnswer}\n\nReturn ONLY JSON with this exact shape:\n{"score": number 0-100, "signals": {"clarity": number, "technical": number, "depth": number}, "feedback": "1-2 sentences", "what_was_good": ["..."], "what_to_improve": ["..."], "ideal_answer_sketch": "3 sentences"}`,
+        `You are a brutally honest senior technical interviewer grading a candidate's answer. Never inflate scores — doing so harms the candidate's growth.
+
+${contextHeader}
+
+QUESTION: ${lastQ}
+
+CANDIDATE ANSWER (${wordCount} word${wordCount === 1 ? "" : "s"}): ${data.userAnswer}
+
+SCORING CALIBRATION — follow strictly:
+- 1-3 words or completely irrelevant/nonsensical (e.g. "no", "yes", "idk", random text): score 0-5, all signals 0-5. what_was_good must be [].
+- Very brief (4-15 words) but tangentially relevant: score 6-20, signals 5-20.
+- Short but partially on-topic (acknowledges question, no real explanation): score 20-35, signals 20-35.
+- Some correct points but incomplete or vague: score 36-55, signals 30-55.
+- Solid answer with clear explanation but missing key details: score 56-70, signals 50-70.
+- Good answer covering most key points with reasonable depth: score 71-82, signals 65-82.
+- Excellent, detailed, technically accurate, shows real experience: score 83-95, signals 80-95.
+- Perfect, comprehensive, production-grade insight: score 96-100, signals 90-100.
+
+RULES:
+- clarity = how clearly and coherently the answer is expressed (0 for incomprehensible or single-word).
+- technical = accuracy and depth of domain knowledge demonstrated (0 if no technical substance).
+- depth = how thoroughly the candidate explored the topic, gave examples, trade-offs (0 if none).
+- If the answer does NOT address the question at all, every signal MUST be ≤ 5.
+- Do NOT fabricate quality. Grade only what is written above.
+- what_was_good MUST be [] if the answer is a non-answer or single word.
+- what_to_improve should name the most important missing elements specifically.
+- ideal_answer_sketch: 2-3 sentences of what a strong answer looks like.
+- feedback must be direct and honest.
+
+Return ONLY valid JSON:
+{"score": number, "signals": {"clarity": number, "technical": number, "depth": number}, "feedback": "string", "what_was_good": ["string"], "what_to_improve": ["string"], "ideal_answer_sketch": "string"}`,
         {
-          score: 60,
-          signals: { clarity: 60, technical: 60, depth: 60 },
+          score: 0,
+          signals: { clarity: 0, technical: 0, depth: 0 },
           feedback: "Answer recorded.",
           what_was_good: [],
-          what_to_improve: [],
+          what_to_improve: ["Provide a detailed, on-topic response."],
           ideal_answer_sketch: "",
         },
       );
@@ -725,8 +914,11 @@ export const interviewTurn = createServerFn({ method: "POST" })
       return { done: true, final: fin, userScore, userFeedback };
     }
 
-    // Don't generate another question if one is already pending unanswered, or we've hit the cap
-    if (assistantCount >= MAX_QUESTIONS || hasPendingQuestion) {
+    // Don't generate another question if one is already pending unanswered, or we've hit the cap.
+    // Re-check using answeredAfter (post-save count) so we don't wrongly block after the user
+    // just submitted their answer.
+    const stillPendingAfterAnswer = assistantCount > answeredAfter;
+    if (assistantCount >= MAX_QUESTIONS || stillPendingAfterAnswer) {
       await supabase
         .from("interview_sessions")
         .update({ question_count: Math.min(assistantCount, MAX_QUESTIONS) })
@@ -778,7 +970,7 @@ export const interviewTurn = createServerFn({ method: "POST" })
 // ------------- RECRUITER: CANDIDATE SUMMARY -------------
 export const summarizeCandidate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ applicationId: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ applicationId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     const { data: app } = await supabase
@@ -816,7 +1008,7 @@ const ResumeContentSchema = z.object({
 
 export const uploadAndParseResume = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         title: z.string().min(1).max(120),
@@ -1062,7 +1254,7 @@ export const uploadAndParseResume = createServerFn({ method: "POST" })
 // ------------- ROLE-TARGETED ANALYSIS (plus points / drawbacks) -------------
 export const analyzeResumeForRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         resumeId: z.string().uuid(),
@@ -1186,7 +1378,7 @@ export const analyzeResumeForRole = createServerFn({ method: "POST" })
 // ------------- LEARNING ROADMAP -------------
 export const generateLearningRoadmap = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         itemId: z.string().uuid(),
@@ -2234,7 +2426,7 @@ Assume ~10-15 hours/week. Make timing crystal clear: total days, days per phase,
 // ------------- GENERATE GAP ANALYSIS -------------
 export const generateGapAnalysis = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         resumeId: z.string().uuid(),

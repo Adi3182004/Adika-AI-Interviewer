@@ -1,7 +1,8 @@
 import jsPDF from "jspdf";
 import { supabase } from "@/integrations/supabase/client";
 
-export async function exportInterviewReport(sessionId: string) {
+/** Build the jsPDF document for a given session (shared between save & open). */
+async function buildReportDoc(sessionId: string) {
   const { data: session, error: e1 } = await supabase
     .from("interview_sessions")
     .select("*")
@@ -122,8 +123,21 @@ export async function exportInterviewReport(sessionId: string) {
     doc.text(`Adika AI · Page ${p}/${pages}`, PAGE_W / 2, PAGE_H - 20, { align: "center" });
   }
 
+  return { doc, session, company };
+}
+
+/** Download the report as a PDF file. */
+export async function exportInterviewReport(sessionId: string) {
+  const { doc, session, company } = await buildReportDoc(sessionId);
   const safe = `${session.role_target}-${company ?? "session"}`
     .replace(/[^a-z0-9]+/gi, "-")
     .toLowerCase();
   doc.save(`adika-interview-${safe}-${sessionId.slice(0, 8)}.pdf`);
+}
+
+/** Open the report as a PDF in a new browser tab (view inline). */
+export async function openInterviewReport(sessionId: string) {
+  const { doc } = await buildReportDoc(sessionId);
+  const blobUrl = doc.output("bloburl") as unknown as string;
+  window.open(blobUrl, "_blank", "noopener");
 }

@@ -46,7 +46,7 @@ export const ensureMyTeam = createServerFn({ method: "POST" })
 
 export const renameMyTeam = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ name: z.string().trim().min(2).max(80) }).parse(d))
+  .validator((d: unknown) => z.object({ name: z.string().trim().min(2).max(80) }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { data: team } = await supabase
@@ -65,7 +65,7 @@ export const renameMyTeam = createServerFn({ method: "POST" })
 
 export const inviteTeammate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         email: z.string().email().toLowerCase(),
@@ -94,7 +94,7 @@ export const inviteTeammate = createServerFn({ method: "POST" })
 
 export const revokeInvite = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ inviteId: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ inviteId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("team_invites").delete().eq("id", data.inviteId);
     if (error) throw new Error(error.message);
@@ -103,7 +103,7 @@ export const revokeInvite = createServerFn({ method: "POST" })
 
 export const removeTeammate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ userId: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ userId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { data: team } = await supabase
@@ -124,7 +124,7 @@ export const removeTeammate = createServerFn({ method: "POST" })
 
 export const acceptInvite = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ token: z.string().min(8) }).parse(d))
+  .validator((d: unknown) => z.object({ token: z.string().min(8) }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
