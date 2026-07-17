@@ -6,6 +6,36 @@ import { createAdikaAiGatewayProvider } from "./ai-gateway.server";
 
 const MODEL = "google/gemini-3-flash-preview";
 
+async function callFastApiBackend<T>(endpoint: string, payload: any, userId?: string): Promise<T | null> {
+  const backendUrl = process.env.FASTAPI_BACKEND_URL;
+  if (!backendUrl) {
+    return null;
+  }
+  try {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (userId) {
+      headers["X-User-Id"] = userId;
+    }
+    const res = await fetch(`${backendUrl}${endpoint}`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error(`FastAPI call to ${endpoint} failed [${res.status}]: ${errText}`);
+      throw new Error(`FastAPI call failed: ${errText}`);
+    }
+    return await res.json() as T;
+  } catch (error) {
+    console.error(`Error connecting to FastAPI backend at ${backendUrl}:`, error);
+    throw error;
+  }
+}
+
+
 function getApiKey() {
   return process.env.ADIKA_API_KEY || process.env.LOVABLE_API_KEY || "";
 }
@@ -505,6 +535,8 @@ export const analyzeResume = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((d: unknown) => z.object({ resumeId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
+    const fastApiResult = await callFastApiBackend<any>("/api/analyze-resume", { resumeId: data.resumeId }, context.userId);
+    if (fastApiResult !== null) return fastApiResult;
     const { supabase, userId } = context;
     const { data: resume, error } = await supabase
       .from("resumes")
@@ -653,6 +685,8 @@ export const improveResumeSection = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data }) => {
+    const fastApiResult = await callFastApiBackend<any>("/api/improve-section", data);
+    if (fastApiResult !== null) return fastApiResult;
     const key = getApiKey();
     if (!key) {
       const improved = `Developed high-performance web applications using React and TypeScript. Led a team of 3 developers to optimize application loading time by 35% and increased user engagement metrics. Integrated REST APIs and designed scalable database schemas in PostgreSQL, ensuring 99.9% uptime.`;
@@ -677,6 +711,8 @@ export const matchJob = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
+    const fastApiResult = await callFastApiBackend<any>("/api/match-job", data, context.userId);
+    if (fastApiResult !== null) return fastApiResult;
     const { supabase, userId } = context;
     const [{ data: job }, { data: resume }] = await Promise.all([
       supabase.from("jobs").select("*").eq("id", data.jobId).single(),
@@ -766,6 +802,8 @@ export const interviewTurn = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
+    const fastApiResult = await callFastApiBackend<any>("/api/interview-turn", data, context.userId);
+    if (fastApiResult !== null) return fastApiResult;
     const { supabase, userId } = context;
     const { data: session } = await supabase
       .from("interview_sessions")
@@ -972,6 +1010,8 @@ export const summarizeCandidate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((d: unknown) => z.object({ applicationId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
+    const fastApiResult = await callFastApiBackend<any>("/api/summarize-candidate", data, context.userId);
+    if (fastApiResult !== null) return fastApiResult;
     const { supabase } = context;
     const { data: app } = await supabase
       .from("applications")
@@ -1019,6 +1059,8 @@ export const uploadAndParseResume = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
+    const fastApiResult = await callFastApiBackend<any>("/api/upload-parse-resume", data, context.userId);
+    if (fastApiResult !== null) return fastApiResult;
     const { supabase, userId } = context;
     const key = getApiKey();
 
@@ -1266,6 +1308,8 @@ export const analyzeResumeForRole = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
+    const fastApiResult = await callFastApiBackend<any>("/api/analyze-resume-for-role", data, context.userId);
+    if (fastApiResult !== null) return fastApiResult;
     const { supabase, userId } = context;
     const { data: resume } = await supabase
       .from("resumes")
@@ -1387,6 +1431,8 @@ export const generateLearningRoadmap = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
+    const fastApiResult = await callFastApiBackend<any>("/api/generate-roadmap", data, context.userId);
+    if (fastApiResult !== null) return fastApiResult;
     const { supabase, userId } = context;
     const { data: item } = await supabase
       .from("learning_items")
@@ -2436,6 +2482,8 @@ export const generateGapAnalysis = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
+    const fastApiResult = await callFastApiBackend<any>("/api/generate-gap-analysis", data, context.userId);
+    if (fastApiResult !== null) return fastApiResult;
     const { supabase, userId } = context;
     const { data: resume } = await supabase
       .from("resumes")
